@@ -13,7 +13,8 @@ app.use(cors());
 app.use(express.json());
 
 app.post('/compile', (req, res) => {
-    const { code, board } = req.body;
+    // Bring back the 'libraries' variable from the frontend request
+    const { code, board, libraries } = req.body;
 
     if (!code || !board) {
         return res.status(400).json({ error: "Missing code or board type." });
@@ -29,13 +30,17 @@ app.post('/compile', (req, res) => {
     fs.writeFileSync(sketchFile, code);
     console.log(`Starting compilation for ${board}...`);
 
-    // --- NEW AUTO-DETECT LIBRARIES LOGIC ---
-    // This Regex looks for #include <Name.h> or #include "Name.h"
+    const libSet = new Set(); // Using a Set prevents duplicate installations
+
+    // 1. Grab manual libraries from the frontend text box (if the user typed any)
+    if (libraries && libraries.trim().length > 0) {
+        const manualLibs = libraries.split(',').map(lib => lib.trim()).filter(lib => lib.length > 0);
+        manualLibs.forEach(lib => libSet.add(lib));
+    }
+
+    // 2. Auto-detect libraries from #include statements
     const regex = /#include\s*[<"]([^>"]+)\.h[>"]/g;
     let match;
-    const libSet = new Set(); // Using a Set automatically removes duplicates
-
-    // Scan the code and extract library names
     while ((match = regex.exec(code)) !== null) {
         libSet.add(match[1]); 
     }
@@ -45,10 +50,9 @@ app.post('/compile', (req, res) => {
 
     if (libArray.length > 0) {
         const formattedLibs = libArray.map(lib => `"${lib}"`).join(' ');
-        console.log(`Auto-detected libraries: ${formattedLibs}`);
+        console.log(`Attempting to install libraries: ${formattedLibs}`);
         
-        // Use ';' instead of '&&'. This ensures that if it tries to install a built-in
-        // library like 'Wire' and fails, it will still move on to compile the code!
+        // Semicolon ensures it tries to install everything but doesn't crash if one fails
         commandChain = `arduino-cli lib install ${formattedLibs} ; `;
     }
 
@@ -56,7 +60,6 @@ app.post('/compile', (req, res) => {
     const compileCmd = `${commandChain}arduino-cli compile -b ${board} --output-dir ${sketchDir} ${sketchDir}`;
 
     exec(compileCmd, (error, stdout, stderr) => {
-        // If the compile command itself fails, it will be caught here
         if (error && !fs.existsSync(path.join(sketchDir, 'temp_sketch.ino.hex')) && !fs.existsSync(path.join(sketchDir, 'temp_sketch.ino.bin'))) {
             console.error(`Compilation error: ${stderr}`);
             return res.status(500).json({ error: "Compilation failed", details: stderr });
