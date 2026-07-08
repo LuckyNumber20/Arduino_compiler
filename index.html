@@ -221,9 +221,6 @@
             <button id="compileBtn">Compile</button>
             <button id="uploadBtn" style="background-color: #28a745;" disabled>Upload</button>
         </div>
-        <div id="progressContainer" style="display: none; width: 100%; background-color: #e0e0e0; border-radius: 4px; margin-bottom: 15px; overflow: hidden; height: 10px;">
-            <div id="progressBar" style="width: 0%; height: 100%; background-color: #28a745; transition: width 0.4s ease;"></div>
-        </div>
 
         <div id="editor">void setup() {
   Serial.begin(115200);
@@ -238,7 +235,10 @@ void loop() {
   Serial.println("LED OFF");
   delay(1000);
 }</div>
-        
+
+        <div id="progressContainer" style="display: none; width: 100%; background-color: #e0e0e0; border-radius: 4px; margin-bottom: 10px; overflow: hidden; height: 10px;">
+            <div id="progressBar" style="width: 0%; height: 100%; background-color: #28a745; transition: width 0.4s ease;"></div>
+        </div>
         <div class="log-window" id="ideLog">Ready to compile...</div>
     </div>
 
