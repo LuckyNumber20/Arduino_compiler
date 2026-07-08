@@ -489,49 +489,43 @@ compileBtn.addEventListener('click', async () => {
         const code = editor.getValue();
         const board = document.getElementById('boardSelect').value;
         
-        // 1. GRAB THE TEXT FROM THE NEW INPUT BOX
-        const libraries = document.getElementById('libInput').value; 
-        
         const progressContainer = document.getElementById('progressContainer');
         const progressBar = document.getElementById('progressBar');
         
         ideLog.innerText = `Sending code to compilation server for ${board}...\n`;
         
-        // Optional: Log the requested libraries to the console so you can see them
-        if (libraries) {
-            ideLog.innerText += `Manual libraries requested: ${libraries}\n`;
-        }
-        
+        // Disable buttons
         compileBtn.disabled = true;
+        uploadBtn.disabled = true;
         
         // --- PROGRESS BAR SETUP ---
         progressContainer.style.display = 'block';
         progressBar.style.width = '0%';
+        progressBar.style.backgroundColor = '#28a745'; // Reset to green
         let progress = 0;
         
-        // Slowly fill the bar up to 90% while we wait
         const progressInterval = setInterval(() => {
             if (progress < 90) {
-                progress += Math.random() * 10; // Add random chunks of progress
-                if (progress > 90) progress = 90; // Cap it at 90%
+                progress += Math.random() * 10; 
+                if (progress > 90) progress = 90; 
                 progressBar.style.width = `${progress}%`;
             }
-        }, 500); // Updates every half second
+        }, 500); 
 
         try {
             // *** MAKE SURE YOUR REAL RENDER URL IS HERE ***
             const response = await fetch('https://arduino-compiler-1h7x.onrender.com/compile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // Send the code, board, AND all saved zip files to the server
+                // Send the zipped libraries array instead of the old text box
                 body: JSON.stringify({ code: code, board: board, zippedLibs: savedLibraries }) 
             });
             
             const result = await response.json();
 
             // --- PROGRESS BAR COMPLETE ---
-            clearInterval(progressInterval); // Stop the fake timer
-            progressBar.style.width = '100%'; // Snap to 100%
+            clearInterval(progressInterval); 
+            progressBar.style.width = '100%'; 
 
             if (result.success) {
                 ideLog.innerText += "Success! Firmware compiled successfully.\n";
@@ -539,22 +533,21 @@ compileBtn.addEventListener('click', async () => {
                 uploadBtn.disabled = false; 
             } else {
                 ideLog.innerText += `\nCompilation Error: ${result.error}\n${result.details}`;
-                progressBar.style.backgroundColor = '#dc3545'; // Turn bar red on error
+                progressBar.style.backgroundColor = '#dc3545'; // Red on error
             }
 
         } catch (error) {
             clearInterval(progressInterval);
             progressBar.style.width = '100%';
-            progressBar.style.backgroundColor = '#dc3545'; // Turn bar red on error
+            progressBar.style.backgroundColor = '#dc3545'; // Red on error
             ideLog.innerText += `\nNetwork Error: Could not reach the server. ${error.message}`;
         } finally {
             compileBtn.disabled = false;
             
-            // Hide the progress bar after 2 seconds so it resets cleanly
             setTimeout(() => {
                 progressContainer.style.display = 'none';
                 progressBar.style.width = '0%';
-                progressBar.style.backgroundColor = '#28a745'; // Reset color back to green
+                progressBar.style.backgroundColor = '#28a745'; 
             }, 2000);
         }
     });
