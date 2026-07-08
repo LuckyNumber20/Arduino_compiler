@@ -1,0 +1,13 @@
+{
+  "name": "arduino-web-compiler",
+  "version": "1.0.0",
+  "description": "Backend compilation server for Web Serial IDE",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  }
+}
