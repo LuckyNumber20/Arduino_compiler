@@ -49,13 +49,12 @@ app.post('/compile', (req, res) => {
     let commandChain = "";
 
     if (libArray.length > 0) {
-        const formattedLibs = libArray.map(lib => `"${lib}"`).join(' ');
-        console.log(`Attempting to install libraries: ${formattedLibs}`);
+        console.log(`Attempting to install libraries: ${libArray.join(', ')}`);
         
-        // Semicolon ensures it tries to install everything but doesn't crash if one fails
-        commandChain = `arduino-cli lib install ${formattedLibs} ; `;
+        // This maps EVERY library to its own independent install command, separated by semicolons.
+        // If Adafruit fails, it will still try LiquidCrystal anyway!
+        commandChain = libArray.map(lib => `arduino-cli lib install "${lib}"`).join(' ; ') + ' ; ';
     }
-
     // Combine the commands
     const compileCmd = `${commandChain}arduino-cli compile -b ${board} --output-dir ${sketchDir} ${sketchDir}`;
 
