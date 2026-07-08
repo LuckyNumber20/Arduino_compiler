@@ -411,15 +411,31 @@ void loop() {
     let compiledFirmware = null;
 
     // --- YOUR NEW SERVER CONNECTION GOES HERE ---
-    compileBtn.addEventListener('click', async () => {
+compileBtn.addEventListener('click', async () => {
         const code = editor.getValue();
         const board = document.getElementById('boardSelect').value;
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
         
         ideLog.innerText = `Sending code to compilation server for ${board}...\n`;
         compileBtn.disabled = true;
+        
+        // --- PROGRESS BAR SETUP ---
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        let progress = 0;
+        
+        // Slowly fill the bar up to 90% while we wait
+        const progressInterval = setInterval(() => {
+            if (progress < 90) {
+                progress += Math.random() * 10; // Add random chunks of progress
+                if (progress > 90) progress = 90; // Cap it at 90%
+                progressBar.style.width = `${progress}%`;
+            }
+        }, 500); // Updates every half second
 
         try {
-            // *** IMPORTANT: REPLACE THE URL BELOW WITH YOUR ACTUAL BACKEND URL ***
+            // *** MAKE SURE YOUR RENDER URL IS HERE ***
             const response = await fetch('https://arduino-compiler-1h7x.onrender.com/compile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -428,18 +444,33 @@ void loop() {
             
             const result = await response.json();
 
+            // --- PROGRESS BAR COMPLETE ---
+            clearInterval(progressInterval); // Stop the fake timer
+            progressBar.style.width = '100%'; // Snap to 100%
+
             if (result.success) {
                 ideLog.innerText += "Success! Firmware compiled successfully.\n";
                 compiledFirmware = result.binaryData; 
                 uploadBtn.disabled = false; 
             } else {
                 ideLog.innerText += `\nCompilation Error: ${result.error}\n${result.details}`;
+                progressBar.style.backgroundColor = '#dc3545'; // Turn bar red on error
             }
 
         } catch (error) {
+            clearInterval(progressInterval);
+            progressBar.style.width = '100%';
+            progressBar.style.backgroundColor = '#dc3545'; // Turn bar red on error
             ideLog.innerText += `\nNetwork Error: Could not reach the server. ${error.message}`;
         } finally {
             compileBtn.disabled = false;
+            
+            // Hide the progress bar after 2 seconds so it resets cleanly
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+                progressBar.style.width = '0%';
+                progressBar.style.backgroundColor = '#28a745'; // Reset color back to green
+            }, 2000);
         }
     });
 
