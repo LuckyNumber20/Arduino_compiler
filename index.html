@@ -219,11 +219,16 @@
                 <option value="esp32:esp32:esp32s3">ESP32-S3</option>
             </select>
             
-            <label for="libInput" style="margin-left: 10px;">Libraries:</label>
-            <input type="text" id="libInput" placeholder="Adafruit Unified Sensor" style="width: 180px;">
+            <input type="file" id="zipFileInput" accept=".zip" style="display: none;">
+            <button id="addZipBtn" style="margin-left: 10px; background-color: #17a2b8;">Upload .ZIP Library</button>
             
-            <button id="compileBtn">🔨 Compile</button>
-            <button id="uploadBtn" style="background-color: #28a745;" disabled>⚡ Upload</button>
+            <button id="compileBtn" style="margin-left: 10px;">Compile</button>
+            <button id="uploadBtn" style="background-color: #28a745;" disabled>Upload</button>
+        </div>
+
+        <div id="savedLibsContainer" style="margin-bottom: 10px; padding: 10px; background-color: #f8f9fa; border-radius: 4px; border: 1px solid #ddd; display: none;">
+            <strong>Saved Libraries:</strong>
+            <ul id="libList" style="margin: 5px 0 0 0; padding-left: 20px;"></ul>
         </div>
 
         <div id="editor">void setup() {
@@ -414,6 +419,71 @@ void loop() {
     const uploadBtn = document.getElementById('uploadBtn');
     let compiledFirmware = null;
 
+
+    // --- ZIP LIBRARY STORAGE LOGIC ---
+    const zipFileInput = document.getElementById('zipFileInput');
+    const addZipBtn = document.getElementById('addZipBtn');
+    const savedLibsContainer = document.getElementById('savedLibsContainer');
+    const libList = document.getElementById('libList');
+
+    // Load saved libraries from browser storage when the page opens
+    let savedLibraries = JSON.parse(localStorage.getItem('arduino_libs')) || [];
+
+    function updateLibUI() {
+        libList.innerHTML = '';
+        if (savedLibraries.length > 0) {
+            savedLibsContainer.style.display = 'block';
+            savedLibraries.forEach((lib, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `${lib.name} <button onclick="removeLib(${index})" style="background:none; border:none; color:red; cursor:pointer; font-size:12px;">[Remove]</button>`;
+                libList.appendChild(li);
+            });
+        } else {
+            savedLibsContainer.style.display = 'none';
+        }
+    }
+
+    // Global function so the inline HTML button can trigger it
+    window.removeLib = function(index) {
+        savedLibraries.splice(index, 1);
+        localStorage.setItem('arduino_libs', JSON.stringify(savedLibraries));
+        updateLibUI();
+    };
+
+    // Trigger the hidden file input when the button is clicked
+    addZipBtn.addEventListener('click', () => zipFileInput.click());
+
+    // When a user selects a ZIP file
+    zipFileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (!file.name.endsWith('.zip')) {
+            alert("Please upload a .zip file!");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64Data = e.target.result;
+            
+            // Check if we hit the browser's 5MB limit
+            try {
+                savedLibraries.push({ name: file.name, data: base64Data });
+                localStorage.setItem('arduino_libs', JSON.stringify(savedLibraries));
+                updateLibUI();
+            } catch (err) {
+                alert("Storage limit reached! This ZIP file is too large for browser memory. Try removing older libraries.");
+                savedLibraries.pop(); // Remove the one that caused the crash
+            }
+        };
+        reader.readAsDataURL(file); // Convert ZIP to text so it can be saved
+        zipFileInput.value = ''; // Reset input
+    });
+
+    // Run this once when the page loads
+    updateLibUI();
+    
     // --- YOUR NEW SERVER CONNECTION GOES HERE ---
 compileBtn.addEventListener('click', async () => {
         const code = editor.getValue();
