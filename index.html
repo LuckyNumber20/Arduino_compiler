@@ -418,10 +418,20 @@ void loop() {
 compileBtn.addEventListener('click', async () => {
         const code = editor.getValue();
         const board = document.getElementById('boardSelect').value;
+        
+        // 1. GRAB THE TEXT FROM THE NEW INPUT BOX
+        const libraries = document.getElementById('libInput').value; 
+        
         const progressContainer = document.getElementById('progressContainer');
         const progressBar = document.getElementById('progressBar');
         
         ideLog.innerText = `Sending code to compilation server for ${board}...\n`;
+        
+        // Optional: Log the requested libraries to the console so you can see them
+        if (libraries) {
+            ideLog.innerText += `Manual libraries requested: ${libraries}\n`;
+        }
+        
         compileBtn.disabled = true;
         
         // --- PROGRESS BAR SETUP ---
@@ -439,11 +449,12 @@ compileBtn.addEventListener('click', async () => {
         }, 500); // Updates every half second
 
         try {
-            // *** MAKE SURE YOUR RENDER URL IS HERE ***
+            // *** MAKE SURE YOUR REAL RENDER URL IS HERE ***
             const response = await fetch('https://arduino-compiler-1h7x.onrender.com/compile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code: code, board: board })
+                // 2. ADD "libraries: libraries" TO THE PAYLOAD
+                body: JSON.stringify({ code: code, board: board, libraries: libraries }) 
             });
             
             const result = await response.json();
