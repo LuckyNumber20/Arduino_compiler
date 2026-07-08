@@ -218,8 +218,12 @@
                 <option value="arduino:avr:uno">Arduino Uno</option>
                 <option value="esp32:esp32:esp32s3">ESP32-S3</option>
             </select>
-            <button id="compileBtn">Compile</button>
-            <button id="uploadBtn" style="background-color: #28a745;" disabled>Upload</button>
+            
+            <label for="libInput" style="margin-left: 10px;">Libraries:</label>
+            <input type="text" id="libInput" placeholder="Adafruit Unified Sensor" style="width: 180px;">
+            
+            <button id="compileBtn">🔨 Compile</button>
+            <button id="uploadBtn" style="background-color: #28a745;" disabled>⚡ Upload</button>
         </div>
 
         <div id="editor">void setup() {
