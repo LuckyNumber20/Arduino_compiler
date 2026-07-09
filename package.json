@@ -24,7 +24,7 @@
     "appId": "com.BCind.brokencrackeride",
     "win": {
       "target": "nsis"
-    }
+    },
     "linux": {
       "target": ["deb"]
     }
