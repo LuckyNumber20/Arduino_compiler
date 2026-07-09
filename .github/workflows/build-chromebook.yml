@@ -1,0 +1,33 @@
+name: Build Chromebook IDE
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-chromebook:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: npm install
+
+      # The "--linux" flag tells Electron to ONLY build the .deb file, ignoring Windows
+      - name: Build Application
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build -- --linux
+
+      - name: Upload Finished App
+        uses: actions/upload-artifact@v3
+        with:
+          name: BrokenCracker-IDE-Chromebook
+          path: dist/*.deb
