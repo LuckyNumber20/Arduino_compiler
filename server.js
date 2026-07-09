@@ -136,8 +136,89 @@ app.post('/create-library', (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Desktop engine running local operations mapping framework via http://localhost:${PORT}`);
+// --- SSH WEBSOCKET HANDLER ---
+wss.on('connection', (ws) => {
+    let sshClient = new Client();
+
+    ws.on('message', (message) => {
+        const parsed = JSON.parse(message);
+
+        if (parsed.action === 'connect') {
+            sshClient.on('ready', () => {
+                sshClient.shell((err, stream) => {
+                    if (err) return ws.send(`\r\n*** SSH Shell Error: ${err.message} ***\r\n`);
+                    
+                    // Route data from Pi to Frontend
+                    stream.on('data', (data) => ws.send(data.toString()));
+                    
+                    // Route data from Frontend to Pi
+                    ws.on('message', (msg) => {
+                        const innerParsed = JSON.parse(msg);
+                        if (innerParsed.action === 'input') {
+                            stream.write(innerParsed.data);
+                        }
+                    });
+                    
+                    stream.on('close', () => {
+                        sshClient.end();
+                        ws.close();
+                    });
+                });
+            }).on('error', (err) => {
+                ws.send(`\r\n*** SSH Connection Error: ${err.message} ***\r\n`);
+                ws.close();
+            }).connect({
+                host: parsed.host,
+                port: 22,
+                username: parsed.user,
+                password: parsed.pass
+            });
+        }
+    });
+
+    ws.on('close', () => {
+        sshClient.end();
+    });
+});
+
+// --- PI IMAGER: DRIVE SCANNER ---
+app.get('/drives', async (req, res) => {
+    try {
+        const drives = await drivelist.list();
+        // Safety: Filter ONLY for removable drives (USB/SD Cards) to prevent wiping the main hard drive
+        const removableDrives = drives.filter(d => d.isRemovable || d.isUSB);
+        res.json(removableDrives);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to scan system drives" });
+    }
+});
+
+// --- PI IMAGER: FLASH ENDPOINT ---
+app.post('/flash-image', (req, res) => {
+    const { imagePath, device } = req.body;
+    
+    if (!fs.existsSync(imagePath)) {
+        return res.status(400).json({ error: "Image file not found on disk." });
+    }
+
+    // NOTE: Writing raw images requires Admin/Sudo privileges. 
+    // This command assumes a Unix environment using 'dd'. 
+    // On Windows, this requires wrapping a tool like 'rufus' or 'balena-cli-flasher'.
+    const isWin = process.platform === "win32";
+    let cmd = isWin 
+        ? `echo "Raw disk writing on Windows requires specialized elevated binaries."` 
+        : `sudo dd if="${imagePath}" of="${device}" bs=4M status=progress`;
+
+    exec(cmd, (error, stdout, stderr) => {
+        if (error) {
+            return res.status(500).json({ error: "Flash sequence failed. You may need Administrator/Root privileges.", details: stderr || stdout });
+        }
+        res.json({ message: "OS successfully flashed to drive!", details: stdout });
+    });
+});
+
+server.listen(PORT, () => {
+    console.log(`Desktop IDE & Terminal Engine running on http://localhost:${PORT}`);
 });
 
 module.exports = app;
