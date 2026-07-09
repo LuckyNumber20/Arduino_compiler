@@ -415,67 +415,54 @@ void loop() {
     let compiledFirmware = null;
     
     // --- SERVER CONNECTION ---
-    compileBtn.addEventListener('click', async () => {
-        const code = editor.getValue();
-        const board = document.getElementById('boardSelect').value;
-        
-        const progressContainer = document.getElementById('progressContainer');
-        const progressBar = document.getElementById('progressBar');
-        
-        ideLog.innerText = `Sending code to compilation server for ${board}...\n`;
-        
-        compileBtn.disabled = true;
-        uploadBtn.disabled = true;
-        
-        progressContainer.style.display = 'block';
-        progressBar.style.width = '0%';
-        progressBar.style.backgroundColor = '#28a745';
-        let progress = 0;
-        
-        const progressInterval = setInterval(() => {
-            if (progress < 90) {
-                progress += Math.random() * 10; 
-                if (progress > 90) progress = 90; 
-                progressBar.style.width = `${progress}%`;
-            }
-        }, 500); 
+    uploadBtn.addEventListener('click', async () => {
+    if (!compiledFirmware) {
+        ideLog.innerText += "\nError: No compiled firmware found. Please compile first.\n";
+        return;
+    }
 
-        try {
-            const response = await fetch('https://arduino-compiler-1h7x.onrender.com/compile', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code: code, board: board }) 
-            });
-            
-            const result = await response.json();
+    const board = document.getElementById('boardSelect').value;
+    
+    // avrgirl-arduino only handles standard AVR chips (like Uno)
+    if (board.includes("esp32")) {
+        ideLog.innerText += "\nError: ESP32 requires a different flasher (esptool-js). This flasher is for Arduino Uno.\n";
+        return;
+    }
 
-            clearInterval(progressInterval); 
-            progressBar.style.width = '100%'; 
+    ideLog.innerText += "\nInitializing AVR Flasher protocol...\n";
+    ideLog.innerText += "Please select your Arduino Uno from the browser prompt...\n";
 
-            if (result.success) {
-                ideLog.innerText += "Success! Firmware compiled successfully.\n";
-                compiledFirmware = result.binaryData; 
-                uploadBtn.disabled = false; 
-            } else {
-                ideLog.innerText += `\nCompilation Error: ${result.error}\n${result.details}`;
-                progressBar.style.backgroundColor = '#dc3545';
-            }
-
-        } catch (error) {
-            clearInterval(progressInterval);
-            progressBar.style.width = '100%';
-            progressBar.style.backgroundColor = '#dc3545';
-            ideLog.innerText += `\nNetwork Error: Could not reach the server. ${error.message}`;
-        } finally {
-            compileBtn.disabled = false;
-            
-            setTimeout(() => {
-                progressContainer.style.display = 'none';
-                progressBar.style.width = '0%';
-                progressBar.style.backgroundColor = '#28a745'; 
-            }, 2000);
+    try {
+        // 1. Convert the base64 firmware string back into a binary Uint8Array buffer
+        const binaryString = atob(compiledFirmware);
+        const len = binaryString.length;
+        const firmwareBuffer = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            firmwareBuffer[i] = binaryString.charCodeAt(i);
         }
-    });
+
+        // 2. Setup the Avrgirl instance specifically configured for Web Serial
+        const avrgirl = new AvrgirlArduino({
+            board: 'uno', // matches 'arduino:avr:uno'
+            debug: true
+        });
+
+        // 3. Start the flash process
+        // This will automatically open a Web Serial device picker
+        avrgirl.flash(firmwareBuffer, (error) => {
+            if (error) {
+                console.error(error);
+                ideLog.innerText += `\nFlashing Failed: ${error.message}\n`;
+            } else {
+                ideLog.innerText += "\nSuccess! Board flashed successfully! 🎉\n";
+            }
+        });
+
+    } catch (err) {
+        console.error(err);
+        ideLog.innerText += `\nFlasher Setup Error: ${err.message}\n`;
+    }
+});
 
     uploadBtn.addEventListener('click', () => {
         ideLog.innerText += "\nInitializing Web Serial flasher...\n";
