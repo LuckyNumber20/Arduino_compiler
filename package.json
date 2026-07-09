@@ -25,5 +25,8 @@
     "win": {
       "target": "nsis"
     }
+    "linux": {
+      "target": ["deb"]
+    }
   }
 }
