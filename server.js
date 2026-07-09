@@ -11,7 +11,6 @@ app.use(cors());
 app.use(express.json());
 
 app.post('/compile', (req, res) => {
-    // We only need the code and the board
     const { code, board } = req.body;
 
     if (!code || !board) {
@@ -20,11 +19,7 @@ app.post('/compile', (req, res) => {
 
     const sketchDir = path.join(__dirname, 'temp_sketch');
     const sketchFile = path.join(sketchDir, 'temp_sketch.ino');
-    
-    // Point directly to your permanent GitHub folder
-    const permanentLibsDir = path.join(__dirname, 'custom_libraries');
 
-    // Clean up old sketch folder just in case
     if (fs.existsSync(sketchDir)) {
         fs.rmSync(sketchDir, { recursive: true, force: true });
     }
@@ -33,8 +28,8 @@ app.post('/compile', (req, res) => {
     fs.writeFileSync(sketchFile, code);
     console.log(`Starting compilation for ${board}...`);
 
-    // The compiler automatically searches permanentLibsDir for any #include headers
-    const compileCmd = `arduino-cli compile -b ${board} --libraries ${permanentLibsDir} --output-dir ${sketchDir} ${sketchDir}`;
+    // Standard compilation command without custom library flags
+    const compileCmd = `arduino-cli compile -b ${board} --output-dir ${sketchDir} ${sketchDir}`;
 
     exec(compileCmd, (error, stdout, stderr) => {
         if (error && !fs.existsSync(path.join(sketchDir, 'temp_sketch.ino.hex')) && !fs.existsSync(path.join(sketchDir, 'temp_sketch.ino.bin'))) {
@@ -55,7 +50,6 @@ app.post('/compile', (req, res) => {
             const fileData = fs.readFileSync(compiledFilePath);
             const base64Data = fileData.toString('base64');
 
-            // Clean up temporary files
             fs.rmSync(sketchDir, { recursive: true, force: true });
 
             return res.json({ 
