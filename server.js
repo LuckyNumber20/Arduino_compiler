@@ -10,17 +10,18 @@ const PORT = process.env.PORT || 10000;
 app.use(cors());
 app.use(express.json());
 
-// Core system headers that ship out-of-the-box with Arduino cores (ignore these)
+// Core built-in architectures libraries that should never be re-downloaded
 const BUILT_IN_LIBRARIES = new Set([
     "Wire", "SPI", "EEPROM", "SoftwareSerial", "HID", "Keyboard", "Mouse", "WiFi", "FS", "SD"
 ]);
 
-// Memory cache to prevent re-searching and re-installing libraries during this server lifecycle
 const installedCache = new Set();
 
 /**
- * Searches the official Arduino Registry for a library that provides the given header file,
- * then installs it automatically via the CLI.
+ * Three-tier smart download engine:
+ * 1. Checks basic built-ins
+ * 2. Matches common shorthand exceptions (like DHT)
+ * 3. Queries registry with an automatic direct name fallback (like FastLED)
  */
 const lookupAndInstallLibrary = (headerName) => {
     return new Promise((resolve) => {
@@ -28,50 +29,55 @@ const lookupAndInstallLibrary = (headerName) => {
             return resolve();
         }
 
-        console.log(`Searching Arduino Registry for a library providing: <${headerName}.h>...`);
-        
-        // Query the live database for any library containing this specific header file interface
+        console.log(`Checking dependency requirement for: <${headerName}.h>`);
+
+        // Tier 1: Micro-dictionary for tricky libraries where header doesn't match the package name
+        const commonOverrides = {
+            "DHT": "DHT sensor library",
+            "Adafruit_Sensor": "Adafruit Unified Sensor",
+            "LiquidCrystal_I2C": "LiquidCrystal I2C"
+        };
+
+        if (commonOverrides[headerName]) {
+            const directLibName = commonOverrides[headerName];
+            console.log(`[Override Match] Installing known package: "${directLibName}"`);
+            exec(`arduino-cli lib install "${directLibName}"`, () => {
+                installedCache.add(headerName);
+                resolve();
+            });
+            return;
+        }
+
+        // Tier 2: Search the online database index
         const searchQuery = `arduino-cli lib search "provides:${headerName}.h" --format json`;
-        
         exec(searchQuery, (err, stdout, stderr) => {
-            if (err) {
-                console.log(`Registry search failed for ${headerName}.h: ${stderr || err.message}`);
-                installedCache.add(headerName); // Add to cache to prevent endless lookup loops
-                return resolve();
+            // Default Fallback: If registry finds nothing, use the header string directly (e.g. FastLED)
+            let libraryTargetName = headerName; 
+
+            if (!err && stdout) {
+                try {
+                    const searchData = JSON.parse(stdout);
+                    if (searchData && searchData.libraries && searchData.libraries.length > 0) {
+                        const bestMatch = searchData.libraries[0];
+                        libraryTargetName = bestMatch.name || (bestMatch.library && bestMatch.library.name) || headerName;
+                        console.log(`[Registry Match] Found official mapping: "${libraryTargetName}"`);
+                    }
+                } catch (parseErr) {
+                    // Fallback string retained on JSON parse failure
+                }
             }
 
-            try {
-                const searchData = JSON.parse(stdout);
-                
-                // Confirm the Registry returned valid matching libraries
-                if (searchData && searchData.libraries && searchData.libraries.length > 0) {
-                    // Extract the primary matching library details
-                    const bestMatch = searchData.libraries[0];
-                    const libraryRealName = bestMatch.name || (bestMatch.library && bestMatch.library.name);
-                    
-                    if (libraryRealName) {
-                        console.log(`Found official match: "${libraryRealName}". Commencing installation...`);
-                        
-                        // Perform standard Arduino IDE library installation
-                        exec(`arduino-cli lib install "${libraryRealName}"`, (installErr) => {
-                            if (installErr) {
-                                console.log(`Installation error for ${libraryRealName}: ${installErr.message}`);
-                            } else {
-                                console.log(`Successfully installed: ${libraryRealName} ✅`);
-                            }
-                            installedCache.add(headerName);
-                            resolve();
-                        });
-                        return;
-                    }
+            // Tier 3: Trigger the physical installation process
+            console.log(`[Installer] Executing download command for: "${libraryTargetName}"`);
+            exec(`arduino-cli lib install "${libraryTargetName}"`, (installErr, instStdout, instStderr) => {
+                if (installErr) {
+                    console.log(`[Installer Note] Handled output for ${libraryTargetName}: ${instStderr || installErr.message}`);
+                } else {
+                    console.log(`[Installer Success] Library environment ready: ${libraryTargetName} ✅`);
                 }
-            } catch (parseError) {
-                console.log(`Failed to parse registry response for ${headerName}.h`);
-            }
-            
-            // Fallback if the registry lookup yielded nothing clean
-            installedCache.add(headerName);
-            resolve();
+                installedCache.add(headerName);
+                resolve(); // Safe to continue to compiler engine
+            });
         });
     });
 };
@@ -83,7 +89,6 @@ app.post('/compile', async (req, res) => {
         return res.status(400).json({ error: "Missing code or board type." });
     }
 
-    // 1. Scan the raw incoming code string for all #include directives
     const includeRegexp = /#include\s*[<"]([^>"]+)\.h[>"]/g;
     let match;
     const detectedHeaders = [];
@@ -95,13 +100,11 @@ app.post('/compile', async (req, res) => {
         }
     }
 
-    // 2. Resolve and download missing dependencies through the live Arduino Index
+    // Await all background installations completely before allowing compiler compilation step to run
     if (detectedHeaders.length > 0) {
-        console.log(`Analyzing sketch inclusions: ${detectedHeaders.map(h => `<${h}.h>`).join(', ')}`);
         await Promise.all(detectedHeaders.map(header => lookupAndInstallLibrary(header)));
     }
 
-    // 3. Set up the temporary build sketch environment
     const sketchDir = path.join(__dirname, 'temp_sketch');
     const sketchFile = path.join(sketchDir, 'temp_sketch.ino');
 
@@ -111,17 +114,16 @@ app.post('/compile', async (req, res) => {
     fs.mkdirSync(sketchDir, { recursive: true });
     fs.writeFileSync(sketchFile, code);
 
-    console.log(`Compiling project files for target: ${board}...`);
+    console.log(`Compiling files for target hardware: ${board}...`);
     const compileCmd = `arduino-cli compile -b ${board} --output-dir ${sketchDir} ${sketchDir}`;
 
-    // 4. Fire the compilation engine
     exec(compileCmd, (error, stdout, stderr) => {
         if (error && !fs.existsSync(path.join(sketchDir, 'temp_sketch.ino.hex')) && !fs.existsSync(path.join(sketchDir, 'temp_sketch.ino.bin'))) {
-            console.error(`Compilation error trace:\n${stderr}`);
+            console.error(`Compilation failure logging trace:\n${stderr}`);
             return res.status(500).json({ error: "Compilation failed", details: stderr });
         }
 
-        console.log("Compilation successful!");
+        console.log("Compilation complete and verified successful!");
 
         const hexPath = path.join(sketchDir, 'temp_sketch.ino.hex');
         const binPath = path.join(sketchDir, 'temp_sketch.ino.bin');
@@ -134,7 +136,6 @@ app.post('/compile', async (req, res) => {
             const fileData = fs.readFileSync(compiledFilePath);
             const base64Data = fileData.toString('base64');
 
-            // Cleanup local filesystem space
             fs.rmSync(sketchDir, { recursive: true, force: true });
 
             return res.json({ 
@@ -143,11 +144,21 @@ app.post('/compile', async (req, res) => {
                 binaryData: base64Data 
             });
         } else {
-            return res.status(500).json({ error: "Could not locate compiled runtime binary file." });
+            return res.status(500).json({ error: "Unable to find binary production artifacts." });
         }
     });
 });
 
 app.listen(PORT, () => {
-    console.log(`Universal Arduino-Compliant Compiler Server initialized on port ${PORT}`);
+    console.log(`Cloud Compiler Active on port ${PORT}`);
+    
+    // CRITICAL: Synchronize the local package index with the global database on startup
+    console.log("Synchronizing official Arduino database indices...");
+    exec("arduino-cli lib update-index", (err, stdout, stderr) => {
+        if (err) {
+            console.error("Warning: Database index syncing encountered issues:", stderr || err.message);
+        } else {
+            console.log("Arduino Database index synchronization complete! Ready for dynamic downloads.");
+        }
+    });
 });
