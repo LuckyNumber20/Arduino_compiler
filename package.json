@@ -1,14 +1,17 @@
 {
-  "name": "arduino-web-compiler",
+  "name": "broken-cracker-ide",
   "version": "1.0.0",
-  "description": "Backend compilation server for Web Serial IDE",
-  "main": "server.js",
+  "main": "main.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "electron .",
+    "dist": "electron-builder --win --x64"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.18.2",
-    "adm-zip": "^0.5.10"
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
   }
 }
