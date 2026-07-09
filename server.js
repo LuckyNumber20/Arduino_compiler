@@ -4,10 +4,11 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { SerialPort } = require('serialport');
-const http = require('http');           // NEW
-const WebSocket = require('ws');        // NEW
-const { Client } = require('ssh2');     // NEW
-const drivelist = require('drivelist'); // NEW
+const http = require('http');
+const WebSocket = require('ws');
+const { Client } = require('ssh2');
+const drivelist = require('drivelist');
+const crypto = require('crypto');
 
 const app = express();
 const server = http.createServer(app);  // NEW: Wrap express in standard HTTP for WebSockets
@@ -216,7 +217,44 @@ app.post('/flash-image', (req, res) => {
         res.json({ message: "OS successfully flashed to drive!", details: stdout });
     });
 });
+// --- ENCRYPTION ENGINE (.bkc files) ---
+const ALGORITHM = 'aes-256-cbc';
+// This is your master app key. It MUST be exactly 32 characters long!
+const MASTER_KEY = 'BrokenCrackerSuperSecretKey12345'; 
 
+// Helper function to scramble code
+function encryptCode(text) {
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(ALGORITHM, MASTER_KEY, iv);
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    // We return both the scrambled text AND the "iv" (initialization vector) needed to unlock it
+    return `${iv.toString('hex')}:${encrypted}`;
+}
+
+// Helper function to unscramble code
+function decryptCode(hash) {
+    const parts = hash.split(':');
+    const iv = Buffer.from(parts[0], 'hex');
+    const encryptedText = parts[1];
+    const decipher = crypto.createDecipheriv(ALGORITHM, MASTER_KEY, iv);
+    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+}
+
+// Endpoint to Save Encrypted .bkc File Locally
+app.post('/save-encrypted', (req, res) => {
+    const { filename, code } = req.body;
+    try {
+        const encryptedData = encryptCode(code);
+        // Save as your custom proprietary file type
+        fs.writeFileSync(path.join(__dirname, `${filename}.bkc`), encryptedData);
+        res.json({ message: "Successfully encrypted and saved as .bkc!" });
+    } catch (err) {
+        res.status(500).json({ error: "Encryption failed." });
+    }
+});
 server.listen(PORT, () => {
     console.log(`Desktop IDE & Terminal Engine running on http://localhost:${PORT}`);
 });
