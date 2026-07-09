@@ -149,6 +149,36 @@ app.post('/compile', async (req, res) => {
     });
 });
 
+app.post('/flash', (req, res) => {
+    const { board, port } = req.body; // e.g., board: "esp32", port: "COM3"
+    
+    if (!port) {
+        return res.status(400).json({ error: "No COM port selected." });
+    }
+
+    const sketchDir = path.join(__dirname, 'temp_sketch');
+    const binFile = path.join(sketchDir, 'temp_sketch.ino.bin');
+
+    if (!fs.existsSync(binFile)) {
+        return res.status(400).json({ error: "No compiled binary found. Please compile first." });
+    }
+
+    console.log(`Flashing ESP32 on port ${port}...`);
+
+    // The official desktop command to flash an ESP32 over native serial
+    const flashCmd = `python -m esptool --chip esp32 --port ${port} --baud 921600 write_flash -z 0x10000 ${binFile}`;
+
+    exec(flashCmd, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Flashing failed: ${stderr}`);
+            return res.status(500).json({ error: "Upload failed", details: stderr });
+        }
+
+        console.log("Upload successful!");
+        return res.json({ success: true, message: "Board flashed successfully! ✅", output: stdout });
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`Cloud Compiler Active on port ${PORT}`);
     
