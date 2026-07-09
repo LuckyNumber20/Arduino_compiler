@@ -6,6 +6,8 @@
     <title>Web Serial Port</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ext-language_tools.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.js"></script>
 
     <style>
         body {
@@ -181,6 +183,8 @@
     <button class="menu-btn active" id="navSerial" onclick="switchView('serialView', 'navSerial')">Serial Monitor</button>
     <button class="menu-btn" id="navProgram" onclick="switchView('programView', 'navProgram')">Programming Mode</button>
     <button class="menu-btn" id="navLibrary" onclick="switchView('libraryCreatorView', 'navLibrary')">Library Creator</button>
+    <button class="menu-btn" id="navSSH" onclick="switchView('sshView', 'navSSH')">SSH Terminal</button>
+    <button class="menu-btn" id="navImager" onclick="switchView('imagerView', 'navImager')">Pi Imager</button>
 </div>
 
 <div class="main-content">
@@ -233,7 +237,7 @@
             <select id="portSelect">
                 <option value="">Scanning ports...</option>
             </select>
-            <button id="refreshPortsBtn" type="button" style="background-color: #555;">🔄 Refresh</button>
+            <button id="refreshPortsBtn" type="button" style="background-color: #555;">Refresh</button>
 
             <button id="compileBtn" style="margin-left: 10px;">Compile</button>
             <button id="uploadBtn" style="background-color: #28a745;" disabled>Upload</button>
@@ -265,11 +269,41 @@ void loop() {
         
         <div class="toolbar" style="margin-top: 20px;">
             <input type="text" id="libNameInput" placeholder="MyCustomLibrary" style="width: 250px;">
-            <button id="generateLibBtn" style="background-color: #6f42c1;">🛠️ Generate Library Templates</button>
+            <button id="generateLibBtn" style="background-color: #6f42c1;"> Generate Library Templates</button>
         </div>
         <div class="log-window" id="libLog" style="height: 80px; margin-top: 15px;">Waiting for build request...</div>
     </div>
 
+
+    <div id="sshView" class="view-panel">
+    <h2>Remote SSH Connection</h2>
+    <div class="toolbar">
+        <input type="text" id="sshHost" placeholder="IP Address (e.g., 192.168.1.50)" style="width: 150px;">
+        <input type="text" id="sshUser" placeholder="Username" style="width: 100px;">
+        <input type="password" id="sshPass" placeholder="Password" style="width: 100px;">
+        <button id="sshConnectBtn" style="background-color: #28a745;">Connect</button>
+        <button id="sshDisconnectBtn" style="background-color: #dc3545; display: none;">Disconnect</button>
+    </div>
+    <div id="sshTerminal" style="height: 300px; background: #000; padding: 10px; border-radius: 4px; margin-top: 15px;"></div>
+</div>
+
+<div id="imagerView" class="view-panel">
+    <h2>Raspberry Pi Imager</h2>
+    <p style="color: #dc3545; font-size: 13px;"><b>Warning:</b> Writing raw images will erase all data on the target drive.</p>
+    
+    <div class="toolbar" style="margin-top: 15px;">
+        <input type="text" id="imagePath" placeholder="Path to .img or .iso file" style="width: 250px;">
+        
+        <select id="driveSelect" style="width: 200px; margin-left: 10px;">
+            <option value="">Scanning for SD/USB drives...</option>
+        </select>
+        <button id="refreshDrivesBtn" style="background-color: #555;"> Refresh</button>
+    </div>
+    
+    <button id="flashDriveBtn" style="background-color: #dc3545; width: 100%; margin-top: 15px; font-weight: bold;"> Flash to Drive</button>
+    
+    <div class="log-window" id="imagerLog" style="height: 100px; margin-top: 15px;">Awaiting file and target drive...</div>
+</div>
 </div>
 
 <script>
@@ -638,6 +672,105 @@ void loop() {
             outputWindow.innerText = "Connection lost communicating directory file layout setups.";
         }
     });
+    // --- SSH TERMINAL LOGIC ---
+const sshConnectBtn = document.getElementById('sshConnectBtn');
+const sshDisconnectBtn = document.getElementById('sshDisconnectBtn');
+let term = new Terminal();
+term.open(document.getElementById('sshTerminal'));
+term.write('Ready to connect via SSH...\r\n');
+
+let sshSocket;
+
+sshConnectBtn.addEventListener('click', () => {
+    const host = document.getElementById('sshHost').value;
+    const user = document.getElementById('sshUser').value;
+    const pass = document.getElementById('sshPass').value;
+
+    if (!host || !user) return alert("Host and Username required!");
+
+    term.reset();
+    term.write('Connecting...\r\n');
+    
+    sshSocket = new WebSocket('ws://localhost:10000');
+    
+    sshSocket.onopen = () => {
+        sshSocket.send(JSON.stringify({ action: 'connect', host, user, pass }));
+        sshConnectBtn.style.display = 'none';
+        sshDisconnectBtn.style.display = 'inline-block';
+    };
+
+    sshSocket.onmessage = (event) => {
+        term.write(event.data);
+    };
+
+    term.onData(data => {
+        if (sshSocket.readyState === WebSocket.OPEN) {
+            sshSocket.send(JSON.stringify({ action: 'input', data: data }));
+        }
+    });
+
+    sshSocket.onclose = () => {
+        term.write('\r\nConnection closed.\r\n');
+        sshConnectBtn.style.display = 'inline-block';
+        sshDisconnectBtn.style.display = 'none';
+    };
+});
+
+sshDisconnectBtn.addEventListener('click', () => {
+    if (sshSocket) sshSocket.close();
+});
+
+// --- PI IMAGER LOGIC ---
+const driveSelect = document.getElementById('driveSelect');
+const imagerLog = document.getElementById('imagerLog');
+
+async function fetchDrives() {
+    try {
+        const res = await fetch('http://localhost:10000/drives');
+        const drives = await res.json();
+        
+        driveSelect.innerHTML = '';
+        if (drives.length === 0) {
+            driveSelect.innerHTML = '<option value="">No removable drives found</option>';
+            return;
+        }
+        
+        drives.forEach(drive => {
+            const opt = document.createElement('option');
+            // Safely show size and description
+            opt.value = drive.device;
+            opt.innerText = `${drive.description} (${Math.round(drive.size / 1e9)} GB) - ${drive.device}`;
+            driveSelect.appendChild(opt);
+        });
+    } catch (err) {
+        driveSelect.innerHTML = '<option value="">Error scanning drives</option>';
+    }
+}
+
+document.getElementById('refreshDrivesBtn').addEventListener('click', fetchDrives);
+window.addEventListener('DOMContentLoaded', fetchDrives); // Load on boot
+
+document.getElementById('flashDriveBtn').addEventListener('click', async () => {
+    const imagePath = document.getElementById('imagePath').value;
+    const device = driveSelect.value;
+    
+    if (!imagePath || !device) return alert("Select an image and a target drive.");
+    if (!confirm(`DANGER: Are you absolutely sure you want to overwrite ${device}? All data will be lost!`)) return;
+
+    imagerLog.innerText = `Starting flash sequence for ${device}...\nThis may take a while depending on image size. DO NOT unplug the drive.`;
+    
+    try {
+        const res = await fetch('http://localhost:10000/flash-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imagePath, device })
+        });
+        const data = await res.json();
+        imagerLog.innerText += `\n\nResult: ${data.message || data.error}\n${data.details || ''}`;
+    } catch (err) {
+        imagerLog.innerText += `\nError contacting flasher backend: ${err.message}`;
+    }
+});
 </script>
 
 </body>
