@@ -26,3 +26,9 @@ jobs:
         run: npm run dist
         env:
           ELECTRON_SKIP_NOTARIZATION: true
+
+      - name: Upload EXE Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-Executable
+          path: "**/*.exe"
