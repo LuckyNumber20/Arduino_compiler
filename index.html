@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web Serial Port</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ext-language_tools.js"></script>
 
     <style>
         body {
@@ -155,6 +156,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            flex-wrap: wrap;
         }
         .toolbar select {
             width: auto;
@@ -178,6 +180,7 @@
 <div class="sidebar">
     <button class="menu-btn active" id="navSerial" onclick="switchView('serialView', 'navSerial')">Serial Monitor</button>
     <button class="menu-btn" id="navProgram" onclick="switchView('programView', 'navProgram')">Programming Mode</button>
+    <button class="menu-btn" id="navLibrary" onclick="switchView('libraryCreatorView', 'navLibrary')">Library Creator</button>
 </div>
 
 <div class="main-content">
@@ -212,6 +215,12 @@
 
     <div id="programView" class="view-panel">
         <h2>Broken Cracker IDE</h2>
+
+        <div class="toolbar" style="background: #e9ecef; padding: 10px; border-radius: 4px;">
+            <input type="text" id="sketchNameInput" placeholder="sketch_name" style="width: 180px;">
+            <button id="saveSketchBtn" style="background-color: #17a2b8;">💾 Save Sketch</button>
+            <button id="loadSketchBtn" style="background-color: #6c757d;">📂 Load Sketch</button>
+        </div>
 
         <div class="toolbar">
             <label for="boardSelect">Board:</label>
@@ -248,6 +257,17 @@ void loop() {
             <div id="progressBar" style="width: 0%; height: 100%; background-color: #28a745; transition: width 0.4s ease;"></div>
         </div>
         <div class="log-window" id="ideLog">Ready to compile...</div>
+    </div>
+
+    <div id="libraryCreatorView" class="view-panel">
+        <h2>Library Creator Mode</h2>
+        <p style="color: #666; font-size: 14px;">Enter a custom library name to automatically generate standard <code>.h</code> and <code>.cpp</code> object templates inside your compiler workspace files tree mapping.</p>
+        
+        <div class="toolbar" style="margin-top: 20px;">
+            <input type="text" id="libNameInput" placeholder="MyCustomLibrary" style="width: 250px;">
+            <button id="generateLibBtn" style="background-color: #6f42c1;">🛠️ Generate Library Templates</button>
+        </div>
+        <div class="log-window" id="libLog" style="height: 80px; margin-top: 15px;">Waiting for build request...</div>
     </div>
 
 </div>
@@ -413,6 +433,13 @@ void loop() {
     editor.session.setMode("ace/mode/c_cpp");
     editor.setFontSize(14);
 
+    // Activating Code Autocomplete parameters options natively
+    editor.setOptions({
+        enableBasicAutocompletion: true,
+        enableLiveAutocompletion: true,
+        enableSnippets: true
+    });
+
     const ideLog = document.getElementById('ideLog');
     const compileBtn = document.getElementById('compileBtn');
     const uploadBtn = document.getElementById('uploadBtn');
@@ -446,7 +473,6 @@ void loop() {
         }
     }
 
-    // Connect hardware scan routines to your window triggers
     document.getElementById('refreshPortsBtn').addEventListener('click', fetchPorts);
     window.addEventListener('DOMContentLoaded', fetchPorts);
 
@@ -474,10 +500,9 @@ void loop() {
                 if (progress > 90) progress = 90; 
                 progressBar.style.width = `${progress}%`;
             }
-        }, 300); // Made compiling progress move a little faster for local execution
+        }, 300);
 
         try {
-            // Updated to point directly to your local desktop background application engine
             const response = await fetch('http://localhost:10000/compile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -511,7 +536,6 @@ void loop() {
         }
     });
 
-    // Upgraded Flasher logic to run directly over local system binaries via backend commands
     uploadBtn.addEventListener('click', async () => {
         const selectedPort = portSelect.value;
         if (!selectedPort) {
@@ -537,6 +561,81 @@ void loop() {
         } catch (err) {
             console.error(err);
             ideLog.innerText += `\nConnection Error: Lost connection to background flasher process. ${err.message}\n`;
+        }
+    });
+
+    // --- SKETCH FILE MANAGEMENT INTERFACE HOOKS ---
+    document.getElementById('saveSketchBtn').addEventListener('click', async () => {
+        const name = document.getElementById('sketchNameInput').value.trim();
+        const code = editor.getValue();
+
+        if (!name) {
+            alert("Please input a sketch file title first!");
+            return;
+        }
+
+        try {
+            const res = await fetch('http://localhost:10000/save-sketch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sketchName: name, code: code })
+            });
+            const data = await res.json();
+            alert(data.message || data.error);
+        } catch (err) {
+            alert("Failed to hit background save loops.");
+        }
+    });
+
+    document.getElementById('loadSketchBtn').addEventListener('click', async () => {
+        const name = document.getElementById('sketchNameInput').value.trim();
+        if (!name) {
+            alert("Please input the title of the sketch folder you wish to retrieve.");
+            return;
+        }
+
+        try {
+            const res = await fetch(`http://localhost:10000/load-sketch?name=${name}`);
+            const data = await res.json();
+            
+            if (res.ok) {
+                editor.setValue(data.code, -1);
+                ideLog.innerText = `Loaded files trace directory template for: ${name}.ino`;
+            } else {
+                alert(data.error);
+            }
+        } catch (err) {
+            alert("Connection link dropped scanning folder listings.");
+        }
+    });
+
+    // --- NATIVE LIBRARY CREATOR LOGIC TRACE ---
+    document.getElementById('generateLibBtn').addEventListener('click', async () => {
+        const libName = document.getElementById('libNameInput').value.trim();
+        const outputWindow = document.getElementById('libLog');
+
+        if (!libName) {
+            outputWindow.innerText = "Error: Input a library namespace label definition.";
+            return;
+        }
+
+        outputWindow.innerText = `Structuring compilation include directories tree mapping context for: ${libName}...`;
+
+        try {
+            const res = await fetch('http://localhost:10000/create-library', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ libraryName: libName })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                outputWindow.innerText = data.message + `\n\nYou can now append #include <${libName}.h> cleanly inside your sketches folder scripts array frame parameters!`;
+            } else {
+                outputWindow.innerText = `Error compiling library tree structural generation patterns: ` + data.error;
+            }
+        } catch (err) {
+            outputWindow.innerText = "Connection lost communicating directory file layout setups.";
         }
     });
 </script>
