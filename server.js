@@ -4,12 +4,20 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { SerialPort } = require('serialport');
+const http = require('http');           // NEW
+const WebSocket = require('ws');        // NEW
+const { Client } = require('ssh2');     // NEW
+const drivelist = require('drivelist'); // NEW
 
 const app = express();
+const server = http.createServer(app);  // NEW: Wrap express in standard HTTP for WebSockets
+const wss = new WebSocket.Server({ server }); // NEW: WebSocket instance
+
 app.use(cors());
 app.use(express.json());
 
 const PORT = 10000;
+// ... keep your existing sketchDir setups and endpoints here ...
 const sketchDir = path.join(__dirname, 'temp_sketch');
 const sketchFile = path.join(sketchDir, 'temp_sketch.ino');
 
