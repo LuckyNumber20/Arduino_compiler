@@ -9,6 +9,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.js"></script>
 
+    <div id="cloud-login-box" style="padding: 10px; background: #222; color: white; border-radius: 5px; margin-bottom: 10px;">
+    <h3>Cloud Sync</h3>
+    <input type="email" id="cloud-email" placeholder="Email address" style="margin-bottom: 5px; width: 100%;"><br>
+    <input type="password" id="cloud-password" placeholder="Password" style="margin-bottom: 5px; width: 100%;"><br>
+    <button onclick="createAccount()">Create Account</button>
+    <button onclick="loginToCloud()">Log In</button>
+    </div>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -771,6 +779,48 @@ document.getElementById('flashDriveBtn').addEventListener('click', async () => {
         imagerLog.innerText += `\nError contacting flasher backend: ${err.message}`;
     }
 });
+</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+<script>
+    // 1. Initialize the Cloud Connection using your specific keys
+    const { Client, Account, ID } = Appwrite;
+    const client = new Client()
+        .setEndpoint('https://sfo.cloud.appwrite.io/v1') 
+        .setProject('6a5031ee002ddc264e2a');             
+
+    const account = new Account(client);
+
+    // 2. Function to Register a New User
+    async function createAccount() {
+        const email = document.getElementById('cloud-email').value;
+        const password = document.getElementById('cloud-password').value;
+        
+        try {
+            // Appwrite requires a unique ID for every user, so we use ID.unique()
+            await account.create(ID.unique(), email, password);
+            alert("Account successfully created! You can now log in.");
+        } catch (err) {
+            alert("Registration Error: " + err.message);
+        }
+    }
+
+    // 3. Function to Log In
+    async function loginToCloud() {
+        const email = document.getElementById('cloud-email').value;
+        const password = document.getElementById('cloud-password').value;
+        
+        try {
+            // This creates a secure "session" token so they stay logged in
+            await account.createEmailPasswordSession(email, password);
+            alert("Logged in! Cloud Sync is now active.");
+            
+            // Hide the login box so it gets out of the user's way
+            document.getElementById('cloud-login-box').style.display = 'none';
+        } catch (err) {
+            alert("Login Error: " + err.message);
+        }
+    }
 </script>
 
 </body>
