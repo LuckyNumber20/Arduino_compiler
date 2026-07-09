@@ -3,11 +3,11 @@ name: Build Windows EXE
 on:
   push:
     branches:
-      - main  # Triggers the build every time you push code to main
+      - main
 
 jobs:
   release:
-    runs-on: windows-latest  # Tells GitHub to launch a temporary Windows PC in the cloud
+    runs-on: windows-latest
 
     steps:
       - name: Check out repository code
@@ -18,16 +18,11 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
-        run: npm install
+      - name: Clean Install Dependencies
+        run: |
+          npm ci || npm install
 
       - name: Package Application into EXE
         run: npm run dist
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload EXE Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Windows-Executable
-          path: dist/*.exe  # Grabs the compiled .exe file
+          ELECTRON_SKIP_NOTARIZATION: true
