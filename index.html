@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web Serial Port</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.js"></script>
-    <script src="https://unpkg.com/avrgirl-arduino@latest/dist/avrgirl-arduino.global.js"></script>
 
     <style>
         body {
@@ -173,7 +172,6 @@
             white-space: pre-wrap;
         }
     </style>
-
 </head>
 <body>
 
@@ -219,8 +217,14 @@
             <label for="boardSelect">Board:</label>
             <select id="boardSelect">
                 <option value="arduino:avr:uno">Arduino Uno</option>
-                <option value="esp32:esp32:esp32s3">ESP32-S3</option>
+                <option value="esp32:esp32:esp32da">ESP32</option>
             </select>
+
+            <label for="portSelect" style="margin-left: 10px;">COM Port:</label>
+            <select id="portSelect">
+                <option value="">Scanning ports...</option>
+            </select>
+            <button id="refreshPortsBtn" type="button" style="background-color: #555;">🔄 Refresh</button>
 
             <button id="compileBtn" style="margin-left: 10px;">Compile</button>
             <button id="uploadBtn" style="background-color: #28a745;" disabled>Upload</button>
@@ -412,9 +416,41 @@ void loop() {
     const ideLog = document.getElementById('ideLog');
     const compileBtn = document.getElementById('compileBtn');
     const uploadBtn = document.getElementById('uploadBtn');
-    let compiledFirmware = null;
+    const portSelect = document.getElementById('portSelect');
 
-    // --- SERVER CONNECTION ---
+    // Automatically scan and populate active hardware COM ports via Electron
+    async function fetchPorts() {
+        try {
+            const response = await fetch('http://localhost:10000/ports');
+            const ports = await response.json();
+            
+            portSelect.innerHTML = '';
+            
+            if (ports.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.innerText = 'No boards found';
+                portSelect.appendChild(opt);
+                return;
+            }
+
+            ports.forEach(port => {
+                const opt = document.createElement('option');
+                opt.value = port.path;
+                opt.innerText = port.friendlyName || port.path;
+                portSelect.appendChild(opt);
+            });
+        } catch (err) {
+            portSelect.innerHTML = '<option value="">Scanner offline</option>';
+            console.error('Failed to grab serial ports:', err);
+        }
+    }
+
+    // Connect hardware scan routines to your window triggers
+    document.getElementById('refreshPortsBtn').addEventListener('click', fetchPorts);
+    window.addEventListener('DOMContentLoaded', fetchPorts);
+
+    // --- LOCAL WORKSPACE ROUTING ---
     compileBtn.addEventListener('click', async () => {
         const code = editor.getValue();
         const board = document.getElementById('boardSelect').value;
@@ -422,7 +458,7 @@ void loop() {
         const progressContainer = document.getElementById('progressContainer');
         const progressBar = document.getElementById('progressBar');
         
-        ideLog.innerText = `Sending code to compilation server for ${board}...\n`;
+        ideLog.innerText = `Sending code to local compiler core for ${board}...\n`;
         
         compileBtn.disabled = true;
         uploadBtn.disabled = true;
@@ -438,55 +474,35 @@ void loop() {
                 if (progress > 90) progress = 90; 
                 progressBar.style.width = `${progress}%`;
             }
-        }, 500); 
+        }, 300); // Made compiling progress move a little faster for local execution
 
         try {
-            const response = await fetch('https://arduino-compiler-1h7x.onrender.com/compile', {
+            // Updated to point directly to your local desktop background application engine
+            const response = await fetch('http://localhost:10000/compile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ code: code, board: board }) 
             });
             
             const result = await response.json();
-
             clearInterval(progressInterval); 
             progressBar.style.width = '100%'; 
 
-            if (result.success) {
-                ideLog.innerText += "Success! Firmware compiled successfully.\n";
-                compiledFirmware = result.binaryData; 
+            if (response.ok && result.success) {
+                ideLog.innerText += "Success! Firmware compiled successfully onto your system drive.\n";
                 uploadBtn.disabled = false; 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             } else {
-                ideLog.innerText += `\nCompilation Error: ${result.error}\n${result.details}`;
+                ideLog.innerText += `\nCompilation Error:\n${result.error || 'Check local server configurations.'}`;
                 progressBar.style.backgroundColor = '#dc3545';
             }
-
 
         } catch (error) {
             clearInterval(progressInterval);
             progressBar.style.width = '100%';
             progressBar.style.backgroundColor = '#dc3545';
-            ideLog.innerText += `\nNetwork Error: Could not reach the server. ${error.message}`;
+            ideLog.innerText += `\nLocal Subsystem Error: Could not reach background loop runner. ${error.message}`;
         } finally {
             compileBtn.disabled = false;
-            
             setTimeout(() => {
                 progressContainer.style.display = 'none';
                 progressBar.style.width = '0%';
@@ -495,54 +511,34 @@ void loop() {
         }
     });
 
-uploadBtn.addEventListener('click', async () => {
-    if (!compiledFirmware) {
-        ideLog.innerText += "\nError: No compiled firmware found. Please compile first.\n";
-        return;
-    }
-
-    const board = document.getElementById('boardSelect').value;
-    
-    // avrgirl-arduino only handles standard AVR chips (like Uno)
-    if (board.includes("esp32")) {
-        ideLog.innerText += "\nError: ESP32 requires a different flasher (esptool-js). This flasher is for Arduino Uno.\n";
-        return;
-    }
-
-    ideLog.innerText += "\nInitializing AVR Flasher protocol...\n";
-    ideLog.innerText += "Please select your Arduino Uno from the browser prompt...\n";
-
-    try {
-        // 1. Convert the base64 firmware string back into a binary Uint8Array buffer
-        const binaryString = atob(compiledFirmware);
-        const len = binaryString.length;
-        const firmwareBuffer = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-            firmwareBuffer[i] = binaryString.charCodeAt(i);
+    // Upgraded Flasher logic to run directly over local system binaries via backend commands
+    uploadBtn.addEventListener('click', async () => {
+        const selectedPort = portSelect.value;
+        if (!selectedPort) {
+            ideLog.innerText += "\nError: Please select an active COM port first.\n";
+            return;
         }
 
-        // 2. Setup the Avrgirl instance specifically configured for Web Serial
-        const avrgirl = new AvrgirlArduino({
-            board: 'uno', // matches 'arduino:avr:uno'
-            debug: true
-        });
+        ideLog.innerText += `\nInitializing native flasher protocol on ${selectedPort}...\n`;
 
-        // 3. Start the flash process
-        // This will automatically open a Web Serial device picker
-        avrgirl.flash(firmwareBuffer, (error) => {
-            if (error) {
-                console.error(error);
-                ideLog.innerText += `\nFlashing Failed: ${error.message}\n`;
+        try {
+            const response = await fetch('http://localhost:10000/flash', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ port: selectedPort })
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                ideLog.innerText += `\n${data.message}\n`;
             } else {
-                ideLog.innerText += "\nSuccess! Board flashed successfully! 🎉\n";
+                ideLog.innerText += `\nFlashing Failed: ${data.error}\n${data.details || ''}\n`;
             }
-        });
-
-    } catch (err) {
-        console.error(err);
-        ideLog.innerText += `\nFlasher Setup Error: ${err.message}\n`;
-    }
-});
+        } catch (err) {
+            console.error(err);
+            ideLog.innerText += `\nConnection Error: Lost connection to background flasher process. ${err.message}\n`;
+        }
+    });
 </script>
 
 </body>
