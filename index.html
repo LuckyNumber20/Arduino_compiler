@@ -413,7 +413,7 @@ void loop() {
     const uploadBtn = document.getElementById('uploadBtn');
     let compiledFirmware = null;
     
-    // --- SERVER CONNECTION GOES HERE ---
+    // --- SERVER CONNECTION ---
     compileBtn.addEventListener('click', async () => {
         const code = editor.getValue();
         const board = document.getElementById('boardSelect').value;
@@ -423,14 +423,12 @@ void loop() {
         
         ideLog.innerText = `Sending code to compilation server for ${board}...\n`;
         
-        // Disable buttons
         compileBtn.disabled = true;
         uploadBtn.disabled = true;
         
-        // --- PROGRESS BAR SETUP ---
         progressContainer.style.display = 'block';
         progressBar.style.width = '0%';
-        progressBar.style.backgroundColor = '#28a745'; // Reset to green
+        progressBar.style.backgroundColor = '#28a745';
         let progress = 0;
         
         const progressInterval = setInterval(() => {
@@ -442,17 +440,14 @@ void loop() {
         }, 500); 
 
         try {
-            // *** MAKE SURE YOUR REAL RENDER URL IS HERE ***
             const response = await fetch('https://arduino-compiler-1h7x.onrender.com/compile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // ONLY sending code and board
                 body: JSON.stringify({ code: code, board: board }) 
             });
             
             const result = await response.json();
 
-            // --- PROGRESS BAR COMPLETE ---
             clearInterval(progressInterval); 
             progressBar.style.width = '100%'; 
 
@@ -462,13 +457,13 @@ void loop() {
                 uploadBtn.disabled = false; 
             } else {
                 ideLog.innerText += `\nCompilation Error: ${result.error}\n${result.details}`;
-                progressBar.style.backgroundColor = '#dc3545'; // Red on error
+                progressBar.style.backgroundColor = '#dc3545';
             }
 
         } catch (error) {
             clearInterval(progressInterval);
             progressBar.style.width = '100%';
-            progressBar.style.backgroundColor = '#dc3545'; // Red on error
+            progressBar.style.backgroundColor = '#dc3545';
             ideLog.innerText += `\nNetwork Error: Could not reach the server. ${error.message}`;
         } finally {
             compileBtn.disabled = false;
