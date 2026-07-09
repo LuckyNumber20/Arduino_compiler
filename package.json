@@ -2,7 +2,7 @@
   "name": "Broken-Cracker-IDE",
   "version": "1.0.0",
   "description": "Homemade Arduino Compiler Application",
-  "author": "Matthew Jarvis",
+  "author": "Matthew Jarvis <djmattj11@gmail.com>",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
