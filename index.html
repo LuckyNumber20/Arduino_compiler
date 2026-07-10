@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Broken Cracker SPoT</title>
+    <title>Web Serial Port</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ext-language_tools.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.css" />
@@ -17,8 +17,8 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background-color: #1e1e1e; /* Dark IDE background */
-            z-index: 9999; /* Keeps it on top of everything */
+            background-color: #1e1e1e;
+            z-index: 9999;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -76,9 +76,15 @@
             margin: 0;
             padding: 0;
             background-color: #f4f4f9;
-            display: flex;
             height: 100vh;
             overflow: hidden;
+        }
+
+        #main-app {
+            display: none;
+            flex-direction: row;
+            height: 100vh;
+            width: 100vw;
         }
 
         /* Sidebar Styling */
@@ -90,6 +96,7 @@
             flex-direction: column;
             padding-top: 20px;
             box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            flex-shrink: 0;
         }
         .sidebar h3 {
             text-align: center;
@@ -124,7 +131,6 @@
         /* Main Content Window */
         .main-content {
             flex: 1;
-            width: 100%;
             padding: 30px;
             overflow-y: auto;
             box-sizing: border-box;
@@ -132,7 +138,7 @@
 
         /* App Views */
         .view-panel {
-            display: none; /* Hidden by default */
+            display: none;
             max-width: 800px;
             background: white;
             padding: 25px;
@@ -140,7 +146,7 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .view-panel.active {
-            display: block; /* Show active panel */
+            display: block;
         }
 
         /* Shared UI Elements */
@@ -160,7 +166,7 @@
         #disconnectBtn {
             background-color: #dc3545;
         }
-        input[type="text"], select {
+        input[type="text"], select, input[type="password"] {
             width: 70%;
             padding: 8px;
             margin-right: 5px;
@@ -249,7 +255,7 @@
             <input type="password" id="login-password" placeholder="Password">
             
             <button onclick="attemptLogin()">Log In</button>
-            <button class="secondary" onclick="switchAuthView('signup')">Create Account</button>
+            <button class="secondary" onclick="switchNavAuthView('signup')">Create Account</button>
             
             <button class="skip" onclick="hideAuth()">Continue Offline</button>
         </div>
@@ -263,13 +269,13 @@
             <input type="password" id="signup-password" placeholder="Password">
             
             <button onclick="attemptSignUp()">Complete Sign Up</button>
-            <button class="secondary" onclick="switchAuthView('login')">Back to Login</button>
+            <button class="secondary" onclick="switchNavAuthView('login')">Back to Login</button>
         </div>
     </div>
 
-    <div id="homepage-view" style="display: none; width: 100vw; height: 100vh; background-color: #1e1e1e; font-family: sans-serif; color: white; position: fixed; top: 0; left: 0; z-index: 9998;">
+    <div id="homepage-view" style="display: none; width: 100vw; height: 100vh; background-color: #1e1e1e; font-family: sans-serif; color: white;">
         <div style="background-color: #252526; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333;">
-            <h2 style="margin: 0; font-size: 20px; color: #007acc;">🚀 Broken Cracker SPoT</h2>
+            <h2 style="margin: 0; font-size: 20px; color: #007acc;">Broken Cracker SPoT</h2>
             <span style="font-size: 12px; color: #888;">Version 1.0.0 (Beta)</span>
         </div>
 
@@ -280,12 +286,12 @@
 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
                     <div onclick="createNewSketch()" style="background: #2d2d2d; padding: 25px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid #444;" onmouseover="this.style.borderColor='#007acc'" onmouseout="this.style.borderColor='#444'">
-                        <h3 style="margin-top: 0; color: #007acc;">📄 New File</h3>
+                        <h3 style="margin-top: 0; color: #007acc;">New File</h3>
                         <p style="color: #aaa; font-size: 13px; margin: 0;">Start from scratch with a fresh blueprint.</p>
                     </div>
 
-                    <div onclick="openLocalFolder()" style="background: #2d2d2d; padding: 25px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid #444;" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='#444'">
-                        <h3 style="margin-top: 0; color: #4ec9b0;">📂 Open Local Folder</h3>
+                    <div onclick="openLocalFolder()" style="background: #2d2d2d; padding: 25px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid #444;" onmouseover="this.style.borderColor='#007acc'" onmouseout="this.style.borderColor='#444'">
+                        <h3 style="margin-top: 0; color: #4ec9b0;">Open Local Folder</h3>
                         <p style="color: #aaa; font-size: 13px; margin: 0;">Browse your hard drive for existing projects.</p>
                     </div>
                 </div>
@@ -294,29 +300,31 @@
             <div style="flex: 1; padding: 40px; background-color: #252526;">
                 <h3 style="margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px;">Recent Work</h3>
                 <ul style="list-style: none; padding: 0; color: #aaa; font-size: 14px;">
-                    <li style="padding: 8px 0; border-bottom: 1px solid #2d2d2d; cursor: pointer;" onclick="alert('Feature coming soon!')">📝 blink_led.ino</li>
-                    <li style="padding: 8px 0; border-bottom: 1px solid #2d2d2d; cursor: pointer;" onclick="alert('Feature coming soon!')">📝 servo_test.bkc</li>
-                    <li style="padding: 8px 0; border-bottom: 1px solid #2d2d2d; cursor: pointer;" onclick="alert('Feature coming soon!')">📝 sensor_read.ino</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #2d2d2d; cursor: pointer;" onclick="alert('Feature coming soon!')">blink_led.ino</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #2d2d2d; cursor: pointer;" onclick="alert('Feature coming soon!')">servo_test.bkc</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #2d2d2d; cursor: pointer;" onclick="alert('Feature coming soon!')">sensor_read.ino</li>
                 </ul>
             </div>
         </div>
     </div>
 
-    <div id="main-app" style="display: flex; width: 100vw; height: 100vh;">
+    <div id="main-app">
         <div class="sidebar">
-    <h3 style="text-align: center; margin-bottom: 20px; color: #ecf0f1; font-size: 16px; letter-spacing: 1px;">SPoT Workspace</h3>
-    
-    <button class="menu-btn" id="navHome" onclick="goToHomepage()" style="color: #ffca28; font-weight: bold; border-bottom: 1px solid #34495e; margin-bottom: 10px;">
-        Return Home
-    </button>
-    
-    <button class="menu-btn active" id="navSerial" onclick="switchView('serialView', 'navSerial')">Serial Monitor</button>
-    <button class="menu-btn" id="navProgram" onclick="switchView('programView', 'navProgram')">Programming Mode</button>
-    <button class="menu-btn" id="navLibrary" onclick="switchView('libraryCreatorView', 'navLibrary')">Library Creator</button>
-    <button class="menu-btn" id="navSSH" onclick="switchView('sshView', 'navSSH')">SSH Terminal</button>
-    <button class="menu-btn" id="navImager" onclick="switchView('imagerView', 'navImager')">Pi Imager</button>
-    <button class="menu-btn" id="navController" onclick="switchView('controllerTerminalView', 'navController')">Terminal</button>
-    </div>
+            <h3 style="text-align: center; margin-bottom: 20px; color: #ecf0f1; font-size: 16px; letter-spacing: 1px;">SPoT Workspace</h3>
+            
+            <button class="menu-btn" id="navHome" onclick="goToHomepage()" style="color: #ffca28; font-weight: bold; border-bottom: 1px solid #34495e; margin-bottom: 10px;">
+                Return Home
+            </button>
+            
+            <button class="menu-btn active tier-feature" id="navSerial" data-feature="SERIAL MONITOR" onclick="switchView('serialView', 'navSerial')">Serial Monitor</button>
+            <button class="menu-btn tier-feature" id="navProgram" data-feature="IDE" onclick="switchView('programView', 'navProgram')">Programming Mode</button>
+            <button class="menu-btn tier-feature" id="navLibrary" data-feature="IDE" onclick="switchView('libraryCreatorView', 'navLibrary')">Library Creator</button>
+            <button class="menu-btn tier-feature" id="navSSH" data-feature="SSH" onclick="switchView('sshView', 'navSSH')">SSH Terminal</button>
+            <button class="menu-btn tier-feature" id="navPinouts" data-feature="PINOUT SHEETS" onclick="switchView('pinoutView', 'navPinouts')">Pinout Sheets</button>
+            <button class="menu-btn tier-feature" id="navAI" data-feature="AI REVIEW" onclick="switchView('aiReviewView', 'navAI')">AI Code Review</button>
+            <button class="menu-btn tier-feature" id="navController" data-feature="MICROTerminal" onclick="switchView('controllerTerminalView', 'navController')">Interactive Terminal</button>
+            <button class="menu-btn tier-feature" id="navImager" data-feature="IDE" onclick="switchView('imagerView', 'navImager')">Pi Imager</button>
+        </div>
 
         <div class="main-content">
             <div id="serialView" class="view-panel active">
@@ -431,670 +439,626 @@ void loop() {
                 
                 <div class="log-window" id="imagerLog" style="height: 100px; margin-top: 15px;">Awaiting file and target drive...</div>
             </div>
+
+            <div id="pinoutView" class="view-panel">
+                <h2>Microcontroller Pinout Sheets</h2>
+                <p style="color: #666;">Reference diagrams for verified layout designs.</p>
+                <div style="background: #eee; padding: 40px; text-align: center; border-radius: 4px; border: 2px dashed #ccc; color: #333;">
+                    [Pinout Diagram Placeholder]
+                </div>
+            </div>
+
+            <div id="aiReviewView" class="view-panel">
+                <h2>AI Code Assistant & Review</h2>
+                <p style="color: #666;">Automated architectural checking optimizations.</p>
+                <button style="background-color: #6f42c1;">Analyze Workspace Script</button>
+                <div class="log-window" style="margin-top: 15px;">Awaiting compilation feed optimization...</div>
+            </div>
+
             <div id="controllerTerminalView" class="view-panel">
-    <h2>Microcontroller Terminal</h2>
-    <p style="color: #666; font-size: 14px;">
-        Deploy the SPoT Interpreter firmware, then enter live commands directly to the hardware runtime.
-    </p>
+                <h2>Microcontroller Interactive Terminal</h2>
+                <p style="color: #666; font-size: 14px;">
+                    Click the setup button to pair your board, flash the SPoT Interpreter firmware, and unlock runtime control.
+                </p>
 
-    <div class="toolbar" style="background: #e9ecef; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
-        <button id="deployFirmwareBtn" style="background-color: #ff9800; font-weight: bold;">Startup & Deploy Parser</button>
-        <span id="deploymentStatus" style="margin-left: 15px; font-weight: bold; color: #555;">Status: Firmware Not Ready</span>
-    </div>
+                <div class="toolbar" style="background: #e9ecef; padding: 15px; border-radius: 4px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px;">
+                    <button id="setupTerminalBtn" style="background-color: #ff9800; font-weight: bold; padding: 10px 20px;">
+                        1. Setup Port & Deploy Core
+                    </button>
+                    <span id="terminalDeployStatus" style="font-weight: bold; color: #dc3545;">Status: Not Initialized</span>
+                </div>
 
-    <div class="terminal" id="interactiveConsole" style="height: 300px; background-color: #0c1015; color: #00d2ff; font-family: monospace; padding: 15px; border-radius: 4px; overflow-y: auto; border: 1px solid #333;">
-        System offline. Press Startup to load terminal environment onto device...
-    </div>
+                <div class="terminal" id="interactiveConsole" style="height: 300px; background-color: #0c1015; color: #00d2ff; font-family: monospace; padding: 15px; border-radius: 4px; overflow-y: auto; border: 1px solid #333; margin-bottom: 15px;">
+                    [System Waiting] Press "Setup Port & Deploy Core" above to choose your USB connection...
+                </div>
 
-    <div style="margin-top: 15px; display: flex; gap: 10px;">
-        <input type="text" id="interactiveInput" placeholder="Type firmware command (e.g., serialprintln(&quot;hello&quot;))" style="flex: 1; padding: 12px; font-family: monospace; background: #1e1e1e; color: #fff; border: 1px solid #444; border-radius: 4px;" disabled>
-        <button id="sendInteractiveBtn" style="background-color: #007acc; padding: 0 25px;" disabled>Execute</button>
-    </div>
-</div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="interactiveInput" placeholder="Type command here (e.g., serialprintln(&quot;hello&quot;))" style="flex: 1; padding: 12px; font-family: monospace; background: #1e1e1e; color: #fff; border: 1px solid #444; border-radius: 4px;" disabled>
+                    <button id="sendInteractiveBtn" style="background-color: #007acc; padding: 0 25px;" disabled>Execute</button>
+                </div>
+            </div>
         </div>
     </div>
 
-<script>
-    // --- Navigation Logic for Sidebar Mode Panels ---
-    function switchView(viewId, btnId) {
-        document.querySelectorAll('.view-panel').forEach(view => view.classList.remove('active'));
-        document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    <script>
+        // --- Core Project Globals & Variables ---
+        let currentUserTier = "basic";
+        const MASTER_BYPASS_KEY = "mj23";
 
-        document.getElementById(viewId).classList.add('active');
-        document.getElementById(btnId).classList.add('active');
-    }
+        // Map definitions corresponding to specification tables
+        const SUBSCRIPTION_TIERS = {
+            "basic": {
+                name: "Basic Bundle ($0)",
+                allowed: ["IDE", "SERIAL MONITOR", "PINOUT SHEETS"]
+            },
+            "hobbyist": {
+                name: "Hobbyist Bundle ($4)",
+                allowed: ["IDE", "SERIAL MONITOR", "PINOUT SHEETS", "MICROTerminal"]
+            },
+            "developer": {
+                name: "Developer Bundle ($7)",
+                allowed: ["IDE", "SERIAL MONITOR", "SSH", "PINOUT SHEETS", "AI REVIEW"]
+            },
+            "executive": {
+                name: "Executive Bundle ($10)",
+                allowed: ["IDE", "SERIAL MONITOR", "SSH", "PINOUT SHEETS", "AI REVIEW", "MICROTerminal"]
+            }
+        };
 
-    // --- Web Serial API Logic ---
-    let port;
-    let writer;
-    let reader;
-    let keepReading = false;
-    let closedPromise;
+        // Initialize Appwrite Client Links
+        const { Client, Account, ID } = Appwrite;
+        const client = new Client()
+            .setEndpoint('https://sfo.cloud.appwrite.io/v1') 
+            .setProject('6a5031ee002ddc264e2a');             
+        const account = new Account(client);
 
-    const connectBtn = document.getElementById('connectBtn');
-    const disconnectBtn = document.getElementById('disconnectBtn');
-    const sendBtn = document.getElementById('sendBtn');
-    const commandInput = document.getElementById('commandInput');
-    const statusText = document.getElementById('statusText');
-    const logText = document.getElementById('logText');
-    const baudrateSelect = document.getElementById('baudrate');
-    const serialTerminal = document.getElementById('serialTerminal');
-    const clearBtn = document.getElementById('clearBtn');
+        // --- Navigation Logic ---
+        function switchView(viewId, btnId) {
+            document.querySelectorAll('.view-panel').forEach(view => view.classList.remove('active'));
+            document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
 
-    if (!('serial' in navigator)) {
-        statusText.innerText = "Web Serial API not supported. Use Chrome or Edge.";
-        connectBtn.disabled = true;
-    }
-
-    connectBtn.addEventListener('click', async () => {
-        try {
-            logText.innerText = "Requesting port access...";
-            port = await navigator.serial.requestPort(); 
-            const baudRate = parseInt(baudrateSelect.value);
-
-            await port.open({ baudRate: baudRate }); 
-
-            statusText.innerText = "Connected";
-            statusText.style.color = "green";
-            connectBtn.style.display = "none";
-            disconnectBtn.style.display = "inline-block";
-            commandInput.disabled = false;
-            sendBtn.disabled = false;
-            logText.innerText = `Successfully opened port at ${baudRate} baud.`;
-            serialTerminal.innerText = "";
-
-            keepReading = true;
-            closedPromise = readLoop();
-
-        } catch (error) {
-            console.error(error);
-            logText.innerText = "Error: " + error.message;
+            document.getElementById(viewId).classList.add('active');
+            document.getElementById(btnId).classList.add('active');
         }
-    });
 
-    async function readLoop() {
-        const textDecoder = new TextDecoderStream();
-        const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
-        reader = textDecoder.readable.getReader();
+        function switchNavAuthView(view) {
+            if (view === 'signup') {
+                document.getElementById('login-view').style.display = 'none';
+                document.getElementById('signup-view').style.display = 'block';
+            } else {
+                document.getElementById('signup-view').style.display = 'none';
+                document.getElementById('login-view').style.display = 'block';
+            }
+        }
 
-        try {
-            while (keepReading) {
-                const { value, done } = await reader.read();
-                if (done) break;
-                if (value) {
-                    serialTerminal.innerText += value;
-                    serialTerminal.scrollTop = serialTerminal.scrollHeight;
+        function hideAuth() {
+            document.getElementById('auth-overlay').style.display = 'none';
+            document.getElementById('homepage-view').style.display = 'block';
+            enforceTierRestrictions("executive"); 
+        }
+
+        function createNewSketch() {
+            document.getElementById('homepage-view').style.display = 'none';
+            document.getElementById('main-app').style.display = 'flex';
+        }
+
+        function openLocalFolder() {
+            alert("Triggering file browser...");
+        }
+
+        function goToHomepage() {
+            document.getElementById('main-app').style.display = 'none';
+            document.getElementById('homepage-view').style.display = 'block';
+        }
+
+        // --- Subscription Management ---
+        function enforceTierRestrictions(tierKey) {
+            const tier = SUBSCRIPTION_TIERS[tierKey] || SUBSCRIPTION_TIERS["basic"];
+            currentUserTier = tierKey;
+            
+            console.log(`Enforcing license authorization: ${tier.name}`);
+
+            document.querySelectorAll('.tier-feature').forEach(button => {
+                const featureType = button.getAttribute('data-feature');
+
+                if (tier.allowed.includes(featureType)) {
+                    button.disabled = false;
+                    button.style.opacity = "1";
+                    button.style.cursor = "pointer";
+                    button.style.pointerEvents = "auto";
+                } else {
+                    button.disabled = true;
+                    button.style.opacity = "0.3";
+                    button.style.cursor = "not-allowed";
+                    button.style.pointerEvents = "none";
+                    
+                    if (button.classList.contains('active')) {
+                        button.classList.remove('active');
+                        switchView('serialView', 'navSerial');
+                    }
                 }
+            });
+        }
+
+        // --- Authentication Subsystems ---
+        async function createAccount() {
+            const email = document.getElementById('signup-username').value;
+            const password = document.getElementById('signup-password').value;
+            try {
+                await account.create(ID.unique(), email, password);
+                alert("Account successfully created! You can now log in.");
+                switchNavAuthView('login');
+            } catch (err) {
+                alert("Registration Error: " + err.message);
             }
-        } catch (error) {
-            console.error("Read error:", error);
-        } finally {
-            reader.releaseLock();
-            await readableStreamClosed.catch(() => {});
         }
-    }
 
-    sendBtn.addEventListener('click', async () => {
-        const command = commandInput.value;
-        if (!command || !port) return;
-
-        try {
-            sendBtn.disabled = true;
-            commandInput.disabled = true;
-
-            const textEncoder = new TextEncoder();
-            writer = port.writable.getWriter();
-            const dataPacket = textEncoder.encode(command + '\n');
-            await writer.write(dataPacket);
-
-            logText.innerText = `Sent: "${command}"`;
-            commandInput.value = ''; 
-
-        } catch (error) {
-            console.error(error);
-            logText.innerText = "Failed to send: " + error.message;
-        } finally {
-            if (writer) writer.releaseLock();
-            sendBtn.disabled = false;
-            commandInput.disabled = false;
-            commandInput.focus();
-        }
-    });
-
-    disconnectBtn.addEventListener('click', async () => {
-        if (!port) return;
-        try {
-            logText.innerText = "Closing connection...";
-            keepReading = false;
-
-            if (reader) {
-                await reader.cancel();
-                await closedPromise;
+        async function loginToCloud() {
+            const email = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            try {
+                await account.createEmailPasswordSession(email, password);
+                const prefs = await account.getPrefs();
+                const assignedTier = prefs.tier || "basic"; 
+                
+                alert(`Logged in! Subscription Tier: ${assignedTier.toUpperCase()}`);
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('homepage-view').style.display = 'block';
+                enforceTierRestrictions(assignedTier);
+            } catch (err) {
+                alert("Login Error: " + err.message);
             }
-
-            await port.close();
-            port = null;
-
-            statusText.innerText = "Disconnected";
-            statusText.style.color = "red";
-            connectBtn.style.display = "inline-block";
-            disconnectBtn.style.display = "none";
-            commandInput.disabled = true;
-            sendBtn.disabled = true;
-            logText.innerText = "Port closed safely.";
-        } catch (error) {
-            console.error(error);
-            logText.innerText = "Error during disconnect: " + error.message;
         }
-    });
 
-    clearBtn.addEventListener('click', () => {
-        serialTerminal.innerText = "";
-    });
-
-    commandInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            sendBtn.click();
-        }
-    });
-
-    if ('serial' in navigator) {
-        navigator.serial.addEventListener('disconnect', (event) => {
-            if (event.target === port) {
-                logText.innerText = "Device physically disconnected.";
-                disconnectBtn.click();
-            }
-        });
-    }
-
-    // --- Programming Mode Logic ---
-    const editor = ace.edit("editor");
-    editor.setTheme("ace/theme/monokai");
-    editor.session.setMode("ace/mode/c_cpp");
-    editor.setFontSize(14);
-
-    editor.setOptions({
-        enableBasicAutocompletion: true,
-        enableLiveAutocompletion: true,
-        enableSnippets: true
-    });
-
-    const ideLog = document.getElementById('ideLog');
-    const compileBtn = document.getElementById('compileBtn');
-    const uploadBtn = document.getElementById('uploadBtn');
-    const portSelect = document.getElementById('portSelect');
-
-    async function fetchPorts() {
-        try {
-            const response = await fetch('http://localhost:10000/ports');
-            const ports = await response.json();
+        function attemptLogin() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
             
-            portSelect.innerHTML = '';
-            
-            if (ports.length === 0) {
-                const opt = document.createElement('option');
-                opt.value = '';
-                opt.innerText = 'No boards found';
-                portSelect.appendChild(opt);
+            if (username === MASTER_BYPASS_KEY || password === MASTER_BYPASS_KEY) {
+                hideAuth();
                 return;
             }
-
-            ports.forEach(port => {
-                const opt = document.createElement('option');
-                opt.value = port.path;
-                opt.innerText = port.friendlyName || port.path;
-                portSelect.appendChild(opt);
-            });
-        } catch (err) {
-            portSelect.innerHTML = '<option value="">Scanner offline</option>';
-            console.error('Failed to grab serial ports:', err);
+            loginToCloud();
         }
-    }
 
-    document.getElementById('refreshPortsBtn').addEventListener('click', fetchPorts);
-    window.addEventListener('DOMContentLoaded', fetchPorts);
-
-    compileBtn.addEventListener('click', async () => {
-        const code = editor.getValue();
-        const board = document.getElementById('boardSelect').value;
-        
-        const progressContainer = document.getElementById('progressContainer');
-        const progressBar = document.getElementById('progressBar');
-        
-        ideLog.innerText = `Sending code to local compiler core for ${board}...\n`;
-        
-        compileBtn.disabled = true;
-        uploadBtn.disabled = true;
-        
-        progressContainer.style.display = 'block';
-        progressBar.style.width = '0%';
-        progressBar.style.backgroundColor = '#28a745';
-        let progress = 0;
-        
-        const progressInterval = setInterval(() => {
-            if (progress < 90) {
-                progress += Math.random() * 10; 
-                if (progress > 90) progress = 90; 
-                progressBar.style.width = `${progress}%`;
+        function attemptSignUp() {
+            const password = document.getElementById('signup-password').value;
+            if (password === MASTER_BYPASS_KEY) {
+                hideAuth();
+                return;
             }
-        }, 300);
+            createAccount();
+        }
 
-        try {
-            const response = await fetch('http://localhost:10000/compile', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code: code, board: board }) 
+        // --- Web Serial API Logic ---
+        let port;
+        let writer;
+        let reader;
+        let keepReading = false;
+        let closedPromise;
+
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const commandInput = document.getElementById('commandInput');
+        const statusText = document.getElementById('statusText');
+        const logText = document.getElementById('logText');
+        const baudrateSelect = document.getElementById('baudrate');
+        const serialTerminal = document.getElementById('serialTerminal');
+        const clearBtn = document.getElementById('clearBtn');
+
+        if (!('serial' in navigator)) {
+            statusText.innerText = "Web Serial API not supported. Use Chrome or Edge.";
+            connectBtn.disabled = true;
+        }
+
+        connectBtn.addEventListener('click', async () => {
+            try {
+                logText.innerText = "Requesting port access...";
+                port = await navigator.serial.requestPort(); 
+                const baudRate = parseInt(baudrateSelect.value);
+
+                await port.open({ baudRate: baudRate }); 
+
+                statusText.innerText = "Connected";
+                statusText.style.color = "green";
+                connectBtn.style.display = "none";
+                disconnectBtn.style.display = "inline-block";
+                commandInput.disabled = false;
+                sendBtn.disabled = false;
+                logText.innerText = `Successfully opened port at ${baudRate} baud.`;
+                serialTerminal.innerText = "";
+
+                keepReading = true;
+                closedPromise = readLoop();
+            } catch (error) {
+                console.error(error);
+                logText.innerText = "Error: " + error.message;
+            }
+        });
+
+        async function readLoop() {
+            const textDecoder = new TextDecoderStream();
+            const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+            reader = textDecoder.readable.getReader();
+            try {
+                while (keepReading) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    if (value) {
+                        serialTerminal.innerText += value;
+                        serialTerminal.scrollTop = serialTerminal.scrollHeight;
+                    }
+                }
+            } catch (error) {
+                console.error("Read error:", error);
+            } finally {
+                reader.releaseLock();
+                await readableStreamClosed.catch(() => {});
+            }
+        }
+
+        sendBtn.addEventListener('click', async () => {
+            const command = commandInput.value;
+            if (!command || !port) return;
+            try {
+                sendBtn.disabled = true;
+                commandInput.disabled = true;
+
+                const textEncoder = new TextEncoder();
+                writer = port.writable.getWriter();
+                const dataPacket = textEncoder.encode(command + '\n');
+                await writer.write(dataPacket);
+
+                logText.innerText = `Sent: "${command}"`;
+                commandInput.value = ''; 
+            } catch (error) {
+                console.error(error);
+                logText.innerText = "Failed to send: " + error.message;
+            } finally {
+                if (writer) writer.releaseLock();
+                sendBtn.disabled = false;
+                commandInput.disabled = false;
+                commandInput.focus();
+            }
+        });
+
+        disconnectBtn.addEventListener('click', async () => {
+            if (!port) return;
+            try {
+                logText.innerText = "Closing connection...";
+                keepReading = false;
+                if (reader) {
+                    await reader.cancel();
+                    await closedPromise;
+                }
+                await port.close();
+                port = null;
+
+                statusText.innerText = "Disconnected";
+                statusText.style.color = "red";
+                connectBtn.style.display = "inline-block";
+                disconnectBtn.style.display = "none";
+                commandInput.disabled = true;
+                sendBtn.disabled = true;
+                logText.innerText = "Port closed safely.";
+            } catch (error) {
+                console.error(error);
+                logText.innerText = "Error during disconnect: " + error.message;
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            serialTerminal.innerText = "";
+        });
+
+        commandInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendBtn.click();
+            }
+        });
+
+        if ('serial' in navigator) {
+            navigator.serial.addEventListener('disconnect', (event) => {
+                if (event.target === port) {
+                    logText.innerText = "Device physically disconnected.";
+                    disconnectBtn.click();
+                }
             });
-            
-            const result = await response.json();
-            clearInterval(progressInterval); 
-            progressBar.style.width = '100%'; 
+        }
 
-            if (response.ok && result.success) {
-                ideLog.innerText += "Success! Firmware compiled successfully onto your system drive.\n";
-                uploadBtn.disabled = false; 
-            } else {
-                ideLog.innerText += `\nCompilation Error:\n${result.error || 'Check local server configurations.'}`;
+        // --- Programming Mode Logic ---
+        const editor = ace.edit("editor");
+        editor.setTheme("ace/theme/monokai");
+        editor.session.setMode("ace/mode/c_cpp");
+        editor.setFontSize(14);
+        editor.setOptions({
+            enableBasicAutocompletion: true,
+            enableLiveAutocompletion: true,
+            enableSnippets: true
+        });
+
+        const ideLog = document.getElementById('ideLog');
+        const compileBtn = document.getElementById('compileBtn');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const portSelect = document.getElementById('portSelect');
+
+        async function fetchPorts() {
+            try {
+                const response = await fetch('http://localhost:10000/ports');
+                const ports = await response.json();
+                portSelect.innerHTML = '';
+                if (ports.length === 0) {
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.innerText = 'No boards found';
+                    portSelect.appendChild(opt);
+                    return;
+                }
+                ports.forEach(port => {
+                    const opt = document.createElement('option');
+                    opt.value = port.path;
+                    opt.innerText = port.friendlyName || port.path;
+                    portSelect.appendChild(opt);
+                });
+            } catch (err) {
+                portSelect.innerHTML = '<option value="">Scanner offline</option>';
+                console.error('Failed to grab serial ports:', err);
+            }
+        }
+
+        document.getElementById('refreshPortsBtn').addEventListener('click', fetchPorts);
+        window.addEventListener('DOMContentLoaded', fetchPorts);
+
+        compileBtn.addEventListener('click', async () => {
+            const code = editor.getValue();
+            const board = document.getElementById('boardSelect').value;
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            
+            ideLog.innerText = `Sending code to local compiler core for ${board}...\n`;
+            compileBtn.disabled = true;
+            uploadBtn.disabled = true;
+            
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressBar.style.backgroundColor = '#28a745';
+            let progress = 0;
+            
+            const progressInterval = setInterval(() => {
+                if (progress < 90) {
+                    progress += Math.random() * 10; 
+                    if (progress > 90) progress = 90; 
+                    progressBar.style.width = `${progress}%`;
+                }
+            }, 300);
+
+            try {
+                const response = await fetch('http://localhost:10000/compile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: code, board: board }) 
+                });
+                
+                const result = await response.json();
+                clearInterval(progressInterval); 
+                progressBar.style.width = '100%'; 
+
+                if (response.ok && result.success) {
+                    ideLog.innerText += "Success! Firmware compiled successfully onto your system drive.\n";
+                    uploadBtn.disabled = false; 
+                } else {
+                    ideLog.innerText += `\nCompilation Error:\n${result.error || 'Check local server configurations.'}`;
+                    progressBar.style.backgroundColor = '#dc3545';
+                }
+            } catch (error) {
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
                 progressBar.style.backgroundColor = '#dc3545';
-            }
-
-        } catch (error) {
-            clearInterval(progressInterval);
-            progressBar.style.width = '100%';
-            progressBar.style.backgroundColor = '#dc3545';
-            ideLog.innerText += `\nLocal Subsystem Error: Could not reach background loop runner. ${error.message}`;
-        } finally {
-            compileBtn.disabled = false;
-            setTimeout(() => {
-                progressContainer.style.display = 'none';
-                progressBar.style.width = '0%';
-                progressBar.style.backgroundColor = '#28a745'; 
-            }, 2000);
-        }
-    });
-
-    uploadBtn.addEventListener('click', async () => {
-        const selectedPort = portSelect.value;
-        if (!selectedPort) {
-            ideLog.innerText += "\nError: Please select an active COM port first.\n";
-            return;
-        }
-
-        ideLog.innerText += `\nInitializing native flasher protocol on ${selectedPort}...\n`;
-
-        try {
-            const response = await fetch('http://localhost:10000/flash', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ port: selectedPort })
-            });
-            const data = await response.json();
-
-            if (response.ok) {
-                ideLog.innerText += `\n${data.message}\n`;
-            } else {
-                ideLog.innerText += `\nFlashing Failed: ${data.error}\n${data.details || ''}\n`;
-            }
-        } catch (err) {
-            console.error(err);
-            ideLog.innerText += `\nConnection Error: Lost connection to background flasher process. ${err.message}\n`;
-        }
-    });
-
-    document.getElementById('saveSketchBtn').addEventListener('click', async () => {
-        const name = document.getElementById('sketchNameInput').value.trim();
-        const code = editor.getValue();
-
-        if (!name) {
-            alert("Please input a sketch file title first!");
-            return;
-        }
-
-        try {
-            const res = await fetch('http://localhost:10000/save-sketch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sketchName: name, code: code })
-            });
-            const data = await res.json();
-            alert(data.message || data.error);
-        } catch (err) {
-            alert("Failed to hit background save loops.");
-        }
-    });
-
-    document.getElementById('loadSketchBtn').addEventListener('click', async () => {
-        const name = document.getElementById('sketchNameInput').value.trim();
-        if (!name) {
-            alert("Please input the title of the sketch folder you wish to retrieve.");
-            return;
-        }
-
-        try {
-            const res = await fetch(`http://localhost:10000/load-sketch?name=${name}`);
-            const data = await res.json();
-            
-            if (res.ok) {
-                editor.setValue(data.code, -1);
-                ideLog.innerText = `Loaded files trace directory template for: ${name}.ino`;
-            } else {
-                alert(data.error);
-            }
-        } catch (err) {
-            alert("Connection link dropped scanning folder listings.");
-        }
-    });
-
-    document.getElementById('generateLibBtn').addEventListener('click', async () => {
-        const libName = document.getElementById('libNameInput').value.trim();
-        const outputWindow = document.getElementById('libLog');
-
-        if (!libName) {
-            outputWindow.innerText = "Error: Input a library namespace label definition.";
-            return;
-        }
-
-        outputWindow.innerText = `Structuring compilation include directories tree mapping context for: ${libName}...`;
-
-        try {
-            const res = await fetch('http://localhost:10000/create-library', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ libraryName: libName })
-            });
-            const data = await res.json();
-
-            if (res.ok) {
-                outputWindow.innerText = data.message + `\n\nYou can now append #include <${libName}.h> cleanly inside your sketches folder scripts array frame parameters!`;
-            } else {
-                outputWindow.innerText = `Error compiling library tree structural generation patterns: ` + data.error;
-            }
-        } catch (err) {
-            outputWindow.innerText = "Connection lost communicating directory file layout setups.";
-        }
-    });
-
-    // --- SSH TERMINAL LOGIC ---
-    const sshConnectBtn = document.getElementById('sshConnectBtn');
-    const sshDisconnectBtn = document.getElementById('sshDisconnectBtn');
-    let term = new Terminal();
-    term.open(document.getElementById('sshTerminal'));
-    term.write('Ready to connect via SSH...\r\n');
-
-    let sshSocket;
-
-    sshConnectBtn.addEventListener('click', () => {
-        const host = document.getElementById('sshHost').value;
-        const user = document.getElementById('sshUser').value;
-        const pass = document.getElementById('sshPass').value;
-
-        if (!host || !user) return alert("Host and Username required!");
-
-        term.reset();
-        term.write('Connecting...\r\n');
-        
-        sshSocket = new WebSocket('ws://localhost:10000');
-        
-        sshSocket.onopen = () => {
-            sshSocket.send(JSON.stringify({ action: 'connect', host, user, pass }));
-            sshConnectBtn.style.display = 'none';
-            sshDisconnectBtn.style.display = 'inline-block';
-        };
-
-        sshSocket.onmessage = (event) => {
-            term.write(event.data);
-        };
-
-        term.onData(data => {
-            if (sshSocket.readyState === WebSocket.OPEN) {
-                sshSocket.send(JSON.stringify({ action: 'input', data: data }));
+                ideLog.innerText += `\nLocal Subsystem Error: Could not reach background loop runner. ${error.message}`;
+            } finally {
+                compileBtn.disabled = false;
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                    progressBar.style.width = '0%';
+                    progressBar.style.backgroundColor = '#28a745'; 
+                }, 2000);
             }
         });
 
-        sshSocket.onclose = () => {
-            term.write('\r\nConnection closed.\r\n');
-            sshConnectBtn.style.display = 'inline-block';
-            sshDisconnectBtn.style.display = 'none';
-        };
-    });
-
-    sshDisconnectBtn.addEventListener('click', () => {
-        if (sshSocket) sshSocket.close();
-    });
-
-    // --- PI IMAGER LOGIC ---
-    const driveSelect = document.getElementById('driveSelect');
-    const imagerLog = document.getElementById('imagerLog');
-
-    async function fetchDrives() {
-        try {
-            const res = await fetch('http://localhost:10000/drives');
-            const drives = await res.json();
-            
-            driveSelect.innerHTML = '';
-            if (drives.length === 0) {
-                driveSelect.innerHTML = '<option value="">No removable drives found</option>';
+        uploadBtn.addEventListener('click', async () => {
+            const selectedPort = portSelect.value;
+            if (!selectedPort) {
+                ideLog.innerText += "\nError: Please select an active COM port first.\n";
                 return;
             }
+            ideLog.innerText += `\nInitializing native flasher protocol on ${selectedPort}...\n`;
+            try {
+                const response = await fetch('http://localhost:10000/flash', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ port: selectedPort })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    ideLog.innerText += `\n${data.message}\n`;
+                } else {
+                    ideLog.innerText += `\nFlashing Failed: ${data.error}\n${data.details || ''}\n`;
+                }
+            } catch (err) {
+                console.error(err);
+                ideLog.innerText += `\nConnection Error: Lost connection to background flasher process. ${err.message}\n`;
+            }
+        });
+
+        // --- Sketch File Management ---
+        document.getElementById('saveSketchBtn').addEventListener('click', async () => {
+            const name = document.getElementById('sketchNameInput').value.trim();
+            const code = editor.getValue();
+            if (!name) {
+                alert("Please input a sketch file title first!");
+                return;
+            }
+            try {
+                const res = await fetch('http://localhost:10000/save-sketch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sketchName: name, code: code })
+                });
+                const data = await res.json();
+                alert(data.message || data.error);
+            } catch (err) {
+                alert("Failed to hit background save loops.");
+            }
+        });
+
+        document.getElementById('loadSketchBtn').addEventListener('click', async () => {
+            const name = document.getElementById('sketchNameInput').value.trim();
+            if (!name) {
+                alert("Please input the title of the sketch folder you wish to retrieve.");
+                return;
+            }
+            try {
+                const res = await fetch(`http://localhost:10000/load-sketch?name=${name}`);
+                const data = await res.json();
+                if (res.ok) {
+                    editor.setValue(data.code, -1);
+                    ideLog.innerText = `Loaded files trace directory template for: ${name}.ino`;
+                } else {
+                    alert(data.error);
+                }
+            } catch (err) {
+                alert("Connection link dropped scanning folder listings.");
+            }
+        });
+
+        // --- Native Library Creator ---
+        document.getElementById('generateLibBtn').addEventListener('click', async () => {
+            const libName = document.getElementById('libNameInput').value.trim();
+            const outputWindow = document.getElementById('libLog');
+            if (!libName) {
+                outputWindow.innerText = "Error: Input a library namespace label definition.";
+                return;
+            }
+            outputWindow.innerText = `Structuring compilation include directories tree mapping context for: ${libName}...`;
+            try {
+                const res = await fetch('http://localhost:10000/create-library', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ libraryName: libName })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    outputWindow.innerText = data.message + `\n\nYou can now append #include <${libName}.h> cleanly inside your sketches folder scripts array frame parameters!`;
+                } else {
+                    outputWindow.innerText = `Error compiling library tree structural generation patterns: ` + data.error;
+                }
+            } catch (err) {
+                outputWindow.innerText = "Connection lost communicating directory file layout setups.";
+            }
+        });
+
+        // --- SSH Terminal Logic ---
+        const sshConnectBtn = document.getElementById('sshConnectBtn');
+        const sshDisconnectBtn = document.getElementById('sshDisconnectBtn');
+        let term = new Terminal();
+        term.open(document.getElementById('sshTerminal'));
+        term.write('Ready to connect via SSH...\r\n');
+        let sshSocket;
+
+        sshConnectBtn.addEventListener('click', () => {
+            const host = document.getElementById('sshHost').value;
+            const user = document.getElementById('sshUser').value;
+            const pass = document.getElementById('sshPass').value;
+            if (!host || !user) return alert("Host and Username required!");
+
+            term.reset();
+            term.write('Connecting...\r\n');
+            sshSocket = new WebSocket('ws://localhost:10000');
             
-            drives.forEach(drive => {
-                const opt = document.createElement('option');
-                opt.value = drive.device;
-                opt.innerText = `${drive.description} (${Math.round(drive.size / 1e9)} GB) - ${drive.device}`;
-                driveSelect.appendChild(opt);
+            sshSocket.onopen = () => {
+                sshSocket.send(JSON.stringify({ action: 'connect', host, user, pass }));
+                sshConnectBtn.style.display = 'none';
+                sshDisconnectBtn.style.display = 'inline-block';
+            };
+            sshSocket.onmessage = (event) => {
+                term.write(event.data);
+            };
+            term.onData(data => {
+                if (sshSocket.readyState === WebSocket.OPEN) {
+                    sshSocket.send(JSON.stringify({ action: 'input', data: data }));
+                }
             });
-        } catch (err) {
-            driveSelect.innerHTML = '<option value="">Error scanning drives</option>';
+            sshSocket.onclose = () => {
+                term.write('\r\nConnection closed.\r\n');
+                sshConnectBtn.style.display = 'inline-block';
+                sshDisconnectBtn.style.display = 'none';
+            };
+        });
+
+        sshDisconnectBtn.addEventListener('click', () => {
+            if (sshSocket) sshSocket.close();
+        });
+
+        // --- Pi Imager Logic ---
+        const driveSelect = document.getElementById('driveSelect');
+        const imagerLog = document.getElementById('imagerLog');
+
+        async function fetchDrives() {
+            try {
+                const res = await fetch('http://localhost:10000/drives');
+                const drives = await res.json();
+                driveSelect.innerHTML = '';
+                if (drives.length === 0) {
+                    driveSelect.innerHTML = '<option value="">No removable drives found</option>';
+                    return;
+                }
+                drives.forEach(drive => {
+                    const opt = document.createElement('option');
+                    opt.value = drive.device;
+                    opt.innerText = `${drive.description} (${Math.round(drive.size / 1e9)} GB) - ${drive.device}`;
+                    driveSelect.appendChild(opt);
+                });
+            } catch (err) {
+                driveSelect.innerHTML = '<option value="">Error scanning drives</option>';
+            }
         }
-    }
 
-    document.getElementById('refreshDrivesBtn').addEventListener('click', fetchDrives);
-    window.addEventListener('DOMContentLoaded', fetchDrives);
+        document.getElementById('refreshDrivesBtn').addEventListener('click', fetchDrives);
+        window.addEventListener('DOMContentLoaded', fetchDrives);
 
-    document.getElementById('flashDriveBtn').addEventListener('click', async () => {
-        const imagePath = document.getElementById('imagePath').value;
-        const device = driveSelect.value;
-        
-        if (!imagePath || !device) return alert("Select an image and a target drive.");
-        if (!confirm(`DANGER: Are you absolutely sure you want to overwrite ${device}? All data will be lost!`)) return;
+        document.getElementById('flashDriveBtn').addEventListener('click', async () => {
+            const imagePath = document.getElementById('imagePath').value;
+            const device = driveSelect.value;
+            if (!imagePath || !device) return alert("Select an image and a target drive.");
+            if (!confirm(`DANGER: Are you absolutely sure you want to overwrite ${device}? All data will be lost!`)) return;
 
-        imagerLog.innerText = `Starting flash sequence for ${device}...\nThis may take a while depending on image size. DO NOT unplug the drive.`;
-        
-        try {
-            const res = await fetch('http://localhost:10000/flash-image', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ imagePath, device })
-            });
-            const data = await res.json();
-            imagerLog.innerText += `\n\nResult: ${data.message || data.error}\n${data.details || ''}`;
-        } catch (err) {
-            imagerLog.innerText += `\nError contacting flasher backend: ${err.message}`;
-        }
-    });
-</script>
+            imagerLog.innerText = `Starting flash sequence for ${device}...\nThis may take a while depending on image size. DO NOT unplug the drive.`;
+            try {
+                const res = await fetch('http://localhost:10000/flash-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imagePath, device })
+                });
+                const data = await res.json();
+                imagerLog.innerText += `\n\nResult: ${data.message || data.error}\n${data.details || ''}`;
+            } catch (err) {
+                imagerLog.innerText += `\nError contacting flasher backend: ${err.message}`;
+            }
+        });
 
-<script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
-<script>
-    const { Client, Account, ID } = Appwrite;
-    const client = new Client()
-        .setEndpoint('https://sfo.cloud.appwrite.io/v1') 
-        .setProject('6a5031ee002ddc264e2a');             
+        // --- Interactive Terminal Core Logic ---
+        let interactivePort = null;
+        let interactiveWriter = null;
 
-    const account = new Account(client);
+        const setupTerminalBtn = document.getElementById('setupTerminalBtn');
+        const terminalDeployStatus = document.getElementById('terminalDeployStatus');
+        const interactiveConsole = document.getElementById('interactiveConsole');
+        const interactiveInput = document.getElementById('interactiveInput');
+        const sendInteractiveBtn = document.getElementById('sendInteractiveBtn');
 
-    // --- DEVELOPER MASTER KEY CONFIG ---
-    const MASTER_BYPASS_KEY = "mj23"; 
-
-    // Flips between login view and signup view in the auth manager box safely
-    function switchAuthView(view) {
-        if (view === 'signup') {
-            document.getElementById('login-view').style.display = 'none';
-            document.getElementById('signup-view').style.display = 'block';
-        } else {
-            document.getElementById('signup-view').style.display = 'none';
-            document.getElementById('login-view').style.display = 'block';
-        }
-    }
-
-    // Handles the bypass route or entry to clear the layout overlay and bring up SPoT homepage dashboard
-    function hideAuth() {
-        document.getElementById('auth-overlay').style.display = 'none';
-        document.getElementById('homepage-view').style.display = 'block';
-        document.getElementById('main-app').style.display = 'none'; // Keep core IDE hidden until homepage prompt action
-    }
-
-    // Triggered by clicking "New File" card from SPoT homepage dashboard
-    function createNewSketch() {
-        document.getElementById('homepage-view').style.display = 'none';
-        document.getElementById('main-app').style.display = 'flex'; // Triggers flex view layout setup cleanly
-    }
-
-    function openLocalFolder() {
-        alert("Triggering local project directory search index hook...");
-    }
-
-    function attemptLogin() {
-        const username = document.getElementById('login-username').value;
-        const password = document.getElementById('login-password').value;
-        
-        if (username === MASTER_BYPASS_KEY || password === MASTER_BYPASS_KEY) {
-            hideAuth();
-            return;
-        }
-        alert("Cloud Sync is currently paused for network troubleshooting. Use the Developer Key or click 'Continue Offline'!");
-    }
-
-    function attemptSignUp() {
-        const password = document.getElementById('signup-password').value;
-
-        if (password === MASTER_BYPASS_KEY) {
-            hideAuth();
-            return;
-        }
-        alert("Cloud Sync is currently paused for network troubleshooting. Click 'Continue Offline' to code!");
-    }
-
-    async function createAccount() {
-        const email = document.getElementById('cloud-email')?.value;
-        const password = document.getElementById('cloud-password')?.value;
-        try {
-            await account.create(ID.unique(), email, password);
-            alert("Account successfully created! You can now log in.");
-        } catch (err) {
-            alert("Registration Error: " + err.message);
-        }
-    }
-    // Function to leave the active workspace and jump back to the main SPoT dashboard
-function goToHomepage() {
-    // 1. Hide the main editor app framework
-    document.getElementById('main-app').style.display = 'none';
-    
-    // 2. Bring back the full screen homepage view
-    document.getElementById('homepage-view').style.display = 'block';
-}
-    // Disable Right-Click context menu
-document.addEventListener('contextmenu', (e) => e.preventDefault());
-
-// Disable F12 and inspection hotkeys
-document.addEventListener('keydown', (e) => {
-    // Block F12
-    if (e.key === 'F12') {
-        e.preventDefault();
-    }
-    // Block Ctrl+Shift+I (Inspect) or Ctrl+Shift+J (Console) or Ctrl+U (View Source)
-    if (e.ctrlKey && (e.shiftKey && (e.key === 'I' || e.key === 'J') || e.key === 'u')) {
-        e.preventDefault();
-    }
-    // Block Cmd+Option+I or Cmd+Option+J on Mac
-    if (e.metaKey && e.altKey && (e.key === 'i' || e.key === 'j')) {
-        e.preventDefault();
-    }
-});
-    const deployBtn = document.getElementById('deployFirmwareBtn');
-const deployStatus = document.getElementById('deploymentStatus');
-const interactiveConsole = document.getElementById('interactiveConsole');
-const interactiveInput = document.getElementById('interactiveInput');
-const sendInteractiveBtn = document.getElementById('sendInteractiveBtn');
-
-// 1. Simulates deploying the parser binary onto the hardware node
-deployBtn.addEventListener('click', async () => {
-    deployStatus.innerText = "Deploying SPoT Core firmware...";
-    deployStatus.style.color = "#ff9800";
-    interactiveConsole.innerText = "> Initializing compiler flash routine...\n";
-
-    // Reuses your backend compile/flash endpoints to automate upload
-    try {
-        // In a full production version, you would send the parser string code to your background local compilation loop here
-        setTimeout(() => {
-            deployStatus.innerText = "Status: Live Debug Mode Connected";
-            deployStatus.style.color = "green";
-            interactiveConsole.innerText += "> Connection synchronized. Pipeline clear.\n> Ready for input commands.\n";
-            
-            // Enable text controls
-            interactiveInput.disabled = false;
-            sendInteractiveBtn.disabled = false;
-            interactiveInput.focus();
-        }, 2000);
-    } catch (err) {
-        deployStatus.innerText = "Deployment Failed";
-        deployStatus.style.color = "red";
-    }
-});
-
-// 2. Sends the command string across the active port interface pipeline
-async function dispatchInteractiveCommand() {
-    const rawCmd = interactiveInput.value.trim();
-    if (!rawCmd) return;
-
-    // Print command on local console layout screen trace view
-    interactiveConsole.innerText += `\n>> ${rawCmd}\n`;
-    
-    // Check if Web Serial port interface is connected and writable
-    if (port && port.writable) {
-        try {
-            const encoder = new TextEncoder();
-            const writer = port.writable.getWriter();
-            
-            // Append explicit newline flag expected by microcontroller string reader
-            await writer.write(encoder.encode(rawCmd + '\n'));
-            writer.releaseLock();
-        } catch (error) {
-            interactiveConsole.innerText += `[System Link Error: ${error.message}]\n`;
-        }
-    } else {
-        interactiveConsole.innerText += `[Simulation Warning: Local serial port link offline. Simulated response sent back successfully.]\n`;
-        
-        // Mocking responses for offline software GUI sandbox evaluation testing
-        if (rawCmd.startsWith('serialprintln("') && rawCmd.endsWith('")')) {
-            const parsedText = rawCmd.substring(15, rawCmd.length - 2);
-            interactiveConsole.innerText += `${parsedText}\n`;
-        } else {
-            interactiveConsole.innerText += `Syntax Error: Unknown command context.\n`;
-        }
-    }
-
-    interactiveInput.value = '';
-    interactiveConsole.scrollTop = interactiveConsole.scrollHeight;
-}
-
-// Bind button clicks and keyboard listener hooks
-sendInteractiveBtn.addEventListener('click', dispatchInteractiveCommand);
-interactiveInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') dispatchInteractiveCommand();
-});
-    // Global tracking references for the custom interactive terminal
-let interactivePort = null;
-let interactiveWriter = null;
-
-const setupTerminalBtn = document.getElementById('setupTerminalBtn');
-const terminalDeployStatus = document.getElementById('terminalDeployStatus');
-const interactiveConsole = document.getElementById('interactiveConsole');
-const interactiveInput = document.getElementById('interactiveInput');
-const sendInteractiveBtn = document.getElementById('sendInteractiveBtn');
-
-// Hardcoded C++ interpreter engine sketch code sent to the compiler core backend
-const TERMINAL_INTERPRETER_CODE = `
+        const TERMINAL_INTERPRETER_CODE = `
 String inputString = "";
 bool stringComplete = false;
 
@@ -1133,102 +1097,90 @@ void serialEvent() {
     else inputString += inChar;
   }
 }
-`;
+        `;
 
-// Triggered when user clicks "1. Setup Port & Deploy Core"
-setupTerminalBtn.addEventListener('click', async () => {
-    if (!('serial' in navigator)) {
-        alert("Web Serial API is not supported in this browser. Please use Chrome or Edge.");
-        return;
-    }
+        setupTerminalBtn.addEventListener('click', async () => {
+            if (!('serial' in navigator)) {
+                alert("Web Serial API is not supported in this browser. Please use Chrome or Edge.");
+                return;
+            }
+            try {
+                interactiveConsole.innerText = "> Requesting user access permissions to local USB controller list...\n";
+                interactivePort = await navigator.serial.requestPort();
+                
+                terminalDeployStatus.innerText = "Status: Flashing Firmware...";
+                terminalDeployStatus.style.color = "#ff9800";
+                interactiveConsole.innerText += "> Target selected. Initializing cloud code execution loop package structures...\n";
 
-    try {
-        interactiveConsole.innerText = "> Requesting user access permissions to local USB controller list...\n";
-        
-        // Browser prompt pops up here asking for the USB selection mapping port context
-        interactivePort = await navigator.serial.requestPort();
-        
-        terminalDeployStatus.innerText = "Status: Flashing Firmware...";
-        terminalDeployStatus.style.color = "#ff9800";
-        interactiveConsole.innerText += "> Target selected. Initializing cloud code execution loop package structures...\n";
+                const compileRes = await fetch('http://localhost:10000/compile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: TERMINAL_INTERPRETER_CODE, board: "arduino:avr:uno" })
+                });
+                const compileData = await compileRes.json();
 
-        // Step A: Post the C++ code to your background compilation core endpoint
-        const compileRes = await fetch('http://localhost:10000/compile', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: TERMINAL_INTERPRETER_CODE, board: "arduino:avr:uno" })
+                if (!compileRes.ok || !compileData.success) {
+                    throw new Error(compileData.error || "Compiler service returned an unexpected structural system anomaly.");
+                }
+
+                interactiveConsole.innerText += "> Compilation successful. Launching hardware programmer binary utility controls...\n";
+
+                const flashRes = await fetch('http://localhost:10000/flash', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ port: "AUTO" })
+                });
+                if (!flashRes.ok) throw new Error("Flasher sequence rejected hardware upload permission.");
+
+                interactiveConsole.innerText += "> Flash complete! Establishing serial monitor pipe lines at 115200 baud...\n";
+                await interactivePort.open({ baudRate: 115200 });
+                
+                terminalDeployStatus.innerText = "Status: Interactive Mode Live";
+                terminalDeployStatus.style.color = "green";
+                interactiveConsole.innerText += "> Connection synchronized cleanly. Terminal workspace is ready for instructions.\n";
+
+                interactiveInput.disabled = false;
+                sendInteractiveBtn.disabled = false;
+                interactiveInput.focus();
+            } catch (err) {
+                console.error(err);
+                terminalDeployStatus.innerText = "Status: Execution Failed";
+                terminalDeployStatus.style.color = "red";
+                interactiveConsole.innerText += `\n[Fatal Setup Link Interruption: ${err.message}]\n`;
+            }
         });
-        const compileData = await compileRes.json();
 
-        if (!compileRes.ok || !compileData.success) {
-            throw new Error(compileData.error || "Compiler service returned an unexpected structural system anomaly.");
+        async function executeInteractiveTerminalInput() {
+            const commandText = interactiveInput.value.trim();
+            if (!commandText) return;
+
+            interactiveConsole.innerText += `\n>> ${commandText}\n`;
+            if (interactivePort && interactivePort.writable) {
+                try {
+                    const encoder = new TextEncoder();
+                    interactiveWriter = interactivePort.writable.getWriter();
+                    await interactiveWriter.write(encoder.encode(commandText + '\n'));
+                    interactiveWriter.releaseLock();
+                } catch (error) {
+                    interactiveConsole.innerText += `[System Send Error: ${error.message}]\n`;
+                }
+            } else {
+                interactiveConsole.innerText += `[Offline Simulator Mode Alert] Microcontroller would execute: ${commandText}\n`;
+                if (commandText.startsWith('serialprintln("') && commandText.endsWith('")')) {
+                    const parsedText = commandText.substring(15, commandText.length - 2);
+                    interactiveConsole.innerText += `${parsedText}\n`;
+                } else {
+                    interactiveConsole.innerText += `Syntax Error: Unknown command context.\n`;
+                }
+            }
+            interactiveInput.value = '';
+            interactiveConsole.scrollTop = interactiveConsole.scrollHeight;
         }
 
-        interactiveConsole.innerText += "> Compilation successful. Launching hardware programmer binary utility controls...\n";
-
-        // Step B: Flash the compiled data down to the device
-        const flashRes = await fetch('http://localhost:10000/flash', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ port: "AUTO" }) // Replace with selected path or let background handle scanner arrays
+        sendInteractiveBtn.addEventListener('click', executeInteractiveTerminalInput);
+        interactiveInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') executeInteractiveTerminalInput();
         });
-
-        if (!flashRes.ok) throw new Error("Flasher sequence rejected hardware upload permission.");
-
-        interactiveConsole.innerText += "> Flash complete! Establishing serial monitor pipe lines at 115200 baud...\n";
-
-        // Step C: Connect direct browser thread down to monitor responses
-        await interactivePort.open({ baudRate: 115200 });
-        
-        terminalDeployStatus.innerText = "Status: Interactive Mode Live";
-        terminalDeployStatus.style.color = "green";
-        interactiveConsole.innerText += "> Connection synchronized cleanly. Terminal workspace is ready for instructions.\n";
-
-        // Activate terminal input controls for runtime interaction
-        interactiveInput.disabled = false;
-        sendInteractiveBtn.disabled = false;
-        interactiveInput.focus();
-
-    } catch (err) {
-        console.error(err);
-        terminalDeployStatus.innerText = "Status: Execution Failed";
-        terminalDeployStatus.style.color = "red";
-        interactiveConsole.innerText += `\n[Fatal Setup Link Interruption: ${err.message}]\n`;
-    }
-});
-
-// Sends whatever command text was typed out to the running board over USB
-async function executeInteractiveTerminalInput() {
-    const commandText = interactiveInput.value.trim();
-    if (!commandText) return;
-
-    interactiveConsole.innerText += `\n>> ${commandText}\n`;
-
-    if (interactivePort && interactivePort.writable) {
-        try {
-            const encoder = new TextEncoder();
-            interactiveWriter = interactivePort.writable.getWriter();
-            
-            // Send the command string followed by the expected newline terminating flag character
-            await interactiveWriter.write(encoder.encode(commandText + '\n'));
-            interactiveWriter.releaseLock();
-        } catch (error) {
-            interactiveConsole.innerText += `[System Send Error: ${error.message}]\n`;
-        }
-    } else {
-        interactiveConsole.innerText += `[Offline Simulator Mode Alert] Microcontroller would execute: ${commandText}\n`;
-    }
-
-    interactiveInput.value = '';
-    interactiveConsole.scrollTop = interactiveConsole.scrollHeight;
-}
-
-// Map the interaction handlers to the submit elements
-sendInteractiveBtn.addEventListener('click', executeInteractiveTerminalInput);
-interactiveInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') executeInteractiveTerminalInput();
-});
-</script>
-
+    </script>
 </body>
 </html>
