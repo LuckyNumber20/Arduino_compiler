@@ -24,6 +24,43 @@
     align-items: center;
     font-family: sans-serif;
 }
+        <div id="homepage-view" style="display: none; width: 100vw; height: 100vh; background-color: #1e1e1e; font-family: sans-serif; color: white;">
+    
+    <div style="background-color: #252526; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333;">
+        <h2 style="margin: 0; font-size: 20px; color: #007acc;">Broken Cracker SPoT</h2>
+        <span style="font-size: 12px; color: #888;">Version 1.0.0 (Beta)</span>
+    </div>
+
+    <div style="display: flex; height: calc(100vh - 60px);">
+        
+        <div style="flex: 2; padding: 40px; border-right: 1px solid #333; overflow-y: auto;">
+            <h1 style="margin-top: 0; font-weight: 300;">Welcome to the Workspace</h1>
+            <p style="color: #aaa; margin-bottom: 40px;">Choose an option below to start coding.</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                <div onclick="createNewSketch()" style="background: #2d2d2d; padding: 25px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid #444;" onmouseover="this.style.borderColor='#007acc'" onmouseout="this.style.borderColor='#444'">
+                    <h3 style="margin-top: 0; color: #007acc;">New File</h3>
+                    <p style="color: #aaa; font-size: 13px; margin: 0;">Start from scratch with a fresh blueprint.</p>
+                </div>
+
+                <div onclick="openLocalFolder()" style="background: #2d2d2d; padding: 25px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid #444;" onmouseover="this.style.borderColor='#007acc'" onmouseout="this.style.borderColor='#444'">
+                    <h3 style="margin-top: 0; color: #4ec9b0;">Open Local Folder</h3>
+                    <p style="color: #aaa; font-size: 13px; margin: 0;">Browse your hard drive for existing projects.</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="flex: 1; padding: 40px; background-color: #252526;">
+            <h3 style="margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px;">Recent Work</h3>
+            <ul style="list-style: none; padding: 0; color: #aaa; font-size: 14px;">
+                <li style="padding: 8px 0; border-bottom: 1px solid #2d2d2d; cursor: pointer;" onclick="alert('Feature coming soon!')">📝 blink_led.ino</li>
+                <li style="padding: 8px 0; border-bottom: 1px solid #2d2d2d; cursor: pointer;" onclick="alert('Feature coming soon!')">📝 servo_test.bkc</li>
+                <li style="padding: 8px 0; border-bottom: 1px solid #2d2d2d; cursor: pointer;" onclick="alert('Feature coming soon!')">📝 sensor_read.ino</li>
+            </ul>
+        </div>
+
+    </div>
+</div>
 
 .auth-box {
     background-color: #2d2d2d;
@@ -242,7 +279,7 @@
     <div id="auth-overlay">
     
     <div id="login-view" class="auth-box">
-        <h2>Broken Cracker IDE</h2>
+        <h2>Broken Cracker SPoT</h2>
         <p style="color: #bbb; font-size: 14px; margin-bottom: 20px;">Welcome back.</p>
         
         <input type="text" id="login-username" placeholder="Username or Email">
@@ -251,7 +288,7 @@
         <button onclick="attemptLogin()">Log In</button>
         <button class="secondary" onclick="switchView('signup')">Create Account</button>
         
-        <button class="skip" onclick="hideAuth()">Continue Offline (Skip)</button>
+        <button class="skip" onclick="hideAuth()">Continue Offline</button>
     </div>
 
     <div id="signup-view" class="auth-box" style="display: none;">
@@ -307,7 +344,7 @@
     </div>
 
     <div id="programView" class="view-panel">
-        <h2>Broken Cracker IDE</h2>
+        <h2>Broken Cracker SPoT</h2>
 
         <div class="toolbar" style="background: #e9ecef; padding: 10px; border-radius: 4px;">
             <input type="text" id="sketchNameInput" placeholder="sketch_name" style="width: 180px;">
@@ -918,9 +955,29 @@ function switchView(view) {
 
 // Hides the whole overlay so you can see your IDE
 function hideAuth() {
+    // Hide the login cover
     document.getElementById('auth-overlay').style.display = 'none';
+    // Show the brand new homepage dashboard!
+    document.getElementById('homepage-view').style.display = 'block';
+}
+    // Function called when the user clicks "New File" on the homepage
+function createNewSketch() {
+    // 1. Hide the homepage view
+    document.getElementById('homepage-view').style.display = 'none';
+    
+    // 2. Open up your main editor layout (Make sure this matches the ID of your code editor container!)
+    // Assuming your main editor panel has an ID like 'editor-container' or 'main-app'
+    const mainWorkspace = document.getElementById('editor-container') || document.getElementById('main-app');
+    if (mainWorkspace) {
+        mainWorkspace.style.display = 'block';
+    }
 }
 
+// Function called when browsing local files
+function openLocalFolder() {
+    alert("Triggering file browser...");
+    // If you have a backend file selector endpoint, you would call it here!
+}
 // Temporary placeholder functions until we fix the network block
 // --- DEVELOPER BYPASS CONFIG ---
 const MASTER_BYPASS_KEY = "mj23"; 
