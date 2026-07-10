@@ -11,18 +11,17 @@ const drivelist = require('drivelist');
 const crypto = require('crypto');
 
 const app = express();
-const server = http.createServer(app);  // NEW: Wrap express in standard HTTP for WebSockets
-const wss = new WebSocket.Server({ server }); // NEW: WebSocket instance
+const server = http.createServer(app); 
+const wss = new WebSocket.Server({ server }); 
 
 app.use(cors());
 app.use(express.json());
 
 const PORT = 10000;
-// ... keep your existing sketchDir setups and endpoints here ...
 const sketchDir = path.join(__dirname, 'temp_sketch');
 const sketchFile = path.join(sketchDir, 'temp_sketch.ino');
 
-// Create temporary directory setup if missing on bootup
+// Ensure temporary directory exists on startup
 if (!fs.existsSync(sketchDir)) {
     fs.mkdirSync(sketchDir, { recursive: true });
 }
@@ -44,15 +43,17 @@ app.get('/ports', async (req, res) => {
 
 // 2. Local Compiler Runner Execution Endpoint
 app.post('/compile', (req, res) => {
-    const { code } = req.body;
+    const { code, board } = req.body;
     
     fs.writeFileSync(sketchFile, code || '');
 
-    const compileCmd = `arduino-cli compile --fqbn esp32:esp32:esp32da "${sketchDir}"`;
+    // Uses the board string passed from the client, defaulting to ESP32 if none specified
+    const targetBoard = board || "esp32:esp32:esp32da";
+    const compileCmd = `arduino-cli compile --fqbn ${targetBoard} "${sketchDir}"`;
 
     exec(compileCmd, (error, stdout, stderr) => {
         if (error) {
-            return res.status(500).json({ error: stderr || stdout });
+            return res.status(500).json({ success: false, error: stderr || stdout });
         }
         res.json({ success: true, output: stdout });
     });
@@ -61,6 +62,10 @@ app.post('/compile', (req, res) => {
 // 3. Hardware Flash Runner Execution Endpoint
 app.post('/flash', (req, res) => {
     const { port } = req.body;
+    if (!port) {
+        return res.status(400).json({ error: "No target COM port specified." });
+    }
+
     const binFile = path.join(sketchDir, 'build', 'esp32.esp32.esp32da', 'temp_sketch.ino.bin');
     const alternateBinFile = path.join(sketchDir, 'temp_sketch.ino.bin');
     const finalBin = fs.existsSync(binFile) ? binFile : alternateBinFile;
@@ -71,11 +76,11 @@ app.post('/flash', (req, res) => {
         if (error) {
             return res.status(500).json({ error: "Upload failed", details: stderr || stdout });
         }
-        res.json({ success: true, message: "Board flashed successfully! ✅", output: stdout });
+        res.json({ success: true, message: "Board flashed successfully!", output: stdout });
     });
 });
 
-// 4. NEW FEATURE: Local Hard Drive Sketch File Preservation Endpoint
+// 4. Local Hard Drive Sketch File Preservation Endpoint
 app.post('/save-sketch', (req, res) => {
     const { sketchName, code } = req.body;
     if (!sketchName) return res.status(400).json({ error: "Sketch title assignment configuration pattern missed." });
@@ -93,7 +98,7 @@ app.post('/save-sketch', (req, res) => {
     }
 });
 
-// 5. NEW FEATURE: Local Hard Drive Sketch Recovery File Endpoint
+// 5. Local Hard Drive Sketch Recovery File Endpoint
 app.get('/load-sketch', (req, res) => {
     const sketchName = req.query.name;
     if (!sketchName) return res.status(400).json({ error: "Missing directory path tracking name definition query parameter." });
@@ -112,12 +117,11 @@ app.get('/load-sketch', (req, res) => {
     }
 });
 
-// 6. NEW FEATURE: Architecture Object Library Generation Endpoint
+// 6. Architecture Object Library Generation Endpoint
 app.post('/create-library', (req, res) => {
     const { libraryName } = req.body;
     if (!libraryName) return res.status(400).json({ error: "Object interface declaration namespace string parameters omitted." });
 
-    // Installs class tracking properties directly into the local compiler includes search paths map folder tree
     const targetLibraryDirectory = path.join(__dirname, 'temp_sketch', 'src', libraryName);
 
     try {
@@ -131,13 +135,78 @@ app.post('/create-library', (req, res) => {
         fs.writeFileSync(path.join(targetLibraryDirectory, `${libraryName}.h`), headerDefinitionBlockStringTemplate);
         fs.writeFileSync(path.join(targetLibraryDirectory, `${libraryName}.cpp`), codeExecutionCPlusPlusBlockStringTemplate);
 
-        res.json({ success: true, message: `Created structural context include file templates inside build workspace directories paths loop loops!` });
+        res.json({ success: true, message: `Created structural context include file templates inside build workspace directories paths!` });
     } catch (err) {
         res.status(500).json({ error: "System directory creation failed executing internal IO paths parameters.", details: err.message });
     }
 });
 
-// --- SSH WEBSOCKET HANDLER ---
+// 7. Removable Drive Scanner Endpoint
+app.get('/drives', async (req, res) => {
+    try {
+        const drives = await drivelist.list();
+        const removableDrives = drives.filter(d => d.isRemovable || d.isUSB);
+        res.json(removableDrives);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to scan system drives" });
+    }
+});
+
+// 8. Removable Drive Image Flasher Endpoint
+app.post('/flash-image', (req, res) => {
+    const { imagePath, device } = req.body;
+    
+    if (!fs.existsSync(imagePath)) {
+        return res.status(400).json({ error: "Image file not found on disk." });
+    }
+
+    const isWin = process.platform === "win32";
+    let cmd = isWin 
+        ? `echo "Raw disk writing on Windows requires specialized elevated binaries."` 
+        : `sudo dd if="${imagePath}" of="${device}" bs=4M status=progress`;
+
+    exec(cmd, (error, stdout, stderr) => {
+        if (error) {
+            return res.status(500).json({ error: "Flash sequence failed. You may need Administrator/Root privileges.", details: stderr || stdout });
+        }
+        res.json({ message: "OS successfully flashed to drive!", details: stdout });
+    });
+});
+
+// 9. Proprietary Code Encryption System
+const ALGORITHM = 'aes-256-cbc';
+const MASTER_KEY = 'BrokenCrackerSuperSecretKey12345'; 
+
+function encryptCode(text) {
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(ALGORITHM, MASTER_KEY, iv);
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return `${iv.toString('hex')}:${encrypted}`;
+}
+
+function decryptCode(hash) {
+    const parts = hash.split(':');
+    const iv = Buffer.from(parts[0], 'hex');
+    const encryptedText = parts[1];
+    const decipher = crypto.createDecipheriv(ALGORITHM, MASTER_KEY, iv);
+    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+}
+
+app.post('/save-encrypted', (req, res) => {
+    const { filename, code } = req.body;
+    try {
+        const encryptedData = encryptCode(code);
+        fs.writeFileSync(path.join(__dirname, `${filename}.bkc`), encryptedData);
+        res.json({ message: "Successfully encrypted and saved as .bkc!" });
+    } catch (err) {
+        res.status(500).json({ error: "Encryption failed." });
+    }
+});
+
+// --- SSH WebSocket Connection Handlers ---
 wss.on('connection', (ws) => {
     let sshClient = new Client();
 
@@ -149,10 +218,8 @@ wss.on('connection', (ws) => {
                 sshClient.shell((err, stream) => {
                     if (err) return ws.send(`\r\n*** SSH Shell Error: ${err.message} ***\r\n`);
                     
-                    // Route data from Pi to Frontend
                     stream.on('data', (data) => ws.send(data.toString()));
                     
-                    // Route data from Frontend to Pi
                     ws.on('message', (msg) => {
                         const innerParsed = JSON.parse(msg);
                         if (innerParsed.action === 'input') {
@@ -182,79 +249,7 @@ wss.on('connection', (ws) => {
     });
 });
 
-// --- PI IMAGER: DRIVE SCANNER ---
-app.get('/drives', async (req, res) => {
-    try {
-        const drives = await drivelist.list();
-        // Safety: Filter ONLY for removable drives (USB/SD Cards) to prevent wiping the main hard drive
-        const removableDrives = drives.filter(d => d.isRemovable || d.isUSB);
-        res.json(removableDrives);
-    } catch (err) {
-        res.status(500).json({ error: "Failed to scan system drives" });
-    }
-});
-
-// --- PI IMAGER: FLASH ENDPOINT ---
-app.post('/flash-image', (req, res) => {
-    const { imagePath, device } = req.body;
-    
-    if (!fs.existsSync(imagePath)) {
-        return res.status(400).json({ error: "Image file not found on disk." });
-    }
-
-    // NOTE: Writing raw images requires Admin/Sudo privileges. 
-    // This command assumes a Unix environment using 'dd'. 
-    // On Windows, this requires wrapping a tool like 'rufus' or 'balena-cli-flasher'.
-    const isWin = process.platform === "win32";
-    let cmd = isWin 
-        ? `echo "Raw disk writing on Windows requires specialized elevated binaries."` 
-        : `sudo dd if="${imagePath}" of="${device}" bs=4M status=progress`;
-
-    exec(cmd, (error, stdout, stderr) => {
-        if (error) {
-            return res.status(500).json({ error: "Flash sequence failed. You may need Administrator/Root privileges.", details: stderr || stdout });
-        }
-        res.json({ message: "OS successfully flashed to drive!", details: stdout });
-    });
-});
-// --- ENCRYPTION ENGINE (.bkc files) ---
-const ALGORITHM = 'aes-256-cbc';
-// This is your master app key. It MUST be exactly 32 characters long!
-const MASTER_KEY = 'BrokenCrackerSuperSecretKey12345'; 
-
-// Helper function to scramble code
-function encryptCode(text) {
-    const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv(ALGORITHM, MASTER_KEY, iv);
-    let encrypted = cipher.update(text, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-    // We return both the scrambled text AND the "iv" (initialization vector) needed to unlock it
-    return `${iv.toString('hex')}:${encrypted}`;
-}
-
-// Helper function to unscramble code
-function decryptCode(hash) {
-    const parts = hash.split(':');
-    const iv = Buffer.from(parts[0], 'hex');
-    const encryptedText = parts[1];
-    const decipher = crypto.createDecipheriv(ALGORITHM, MASTER_KEY, iv);
-    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
-}
-
-// Endpoint to Save Encrypted .bkc File Locally
-app.post('/save-encrypted', (req, res) => {
-    const { filename, code } = req.body;
-    try {
-        const encryptedData = encryptCode(code);
-        // Save as your custom proprietary file type
-        fs.writeFileSync(path.join(__dirname, `${filename}.bkc`), encryptedData);
-        res.json({ message: "Successfully encrypted and saved as .bkc!" });
-    } catch (err) {
-        res.status(500).json({ error: "Encryption failed." });
-    }
-});
+// Start application layer on wrapped HTTP listener
 server.listen(PORT, () => {
     console.log(`Desktop IDE & Terminal Engine running on http://localhost:${PORT}`);
 });
