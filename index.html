@@ -964,6 +964,14 @@ void loop() {
             alert("Registration Error: " + err.message);
         }
     }
+    // Function to leave the active workspace and jump back to the main SPoT dashboard
+function goToHomepage() {
+    // 1. Hide the main editor app framework
+    document.getElementById('main-app').style.display = 'none';
+    
+    // 2. Bring back the full screen homepage view
+    document.getElementById('homepage-view').style.display = 'block';
+}
 </script>
 
 </body>
