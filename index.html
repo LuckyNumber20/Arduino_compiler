@@ -972,6 +972,24 @@ function goToHomepage() {
     // 2. Bring back the full screen homepage view
     document.getElementById('homepage-view').style.display = 'block';
 }
+    // Disable Right-Click context menu
+document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+// Disable F12 and inspection hotkeys
+document.addEventListener('keydown', (e) => {
+    // Block F12
+    if (e.key === 'F12') {
+        e.preventDefault();
+    }
+    // Block Ctrl+Shift+I (Inspect) or Ctrl+Shift+J (Console) or Ctrl+U (View Source)
+    if (e.ctrlKey && (e.shiftKey && (e.key === 'I' || e.key === 'J') || e.key === 'u')) {
+        e.preventDefault();
+    }
+    // Block Cmd+Option+I or Cmd+Option+J on Mac
+    if (e.metaKey && e.altKey && (e.key === 'i' || e.key === 'j')) {
+        e.preventDefault();
+    }
+});
 </script>
 
 </body>
