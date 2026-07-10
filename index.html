@@ -922,7 +922,34 @@ function hideAuth() {
 }
 
 // Temporary placeholder functions until we fix the network block
+// --- DEVELOPER BYPASS CONFIG ---
+const MASTER_BYPASS_KEY = "mj23"; 
+
+// Updated Login Function with Backdoor
 function attemptLogin() {
+    const username = document.getElementById('login-username').value;
+    const password = document.getElementById('login-password').value;
+    
+    // Check if the user typed the master key in either box
+    if (username === MASTER_BYPASS_KEY || password === MASTER_BYPASS_KEY) {
+        hideAuth(); // Instantly unlocks the IDE
+        return;
+    }
+    
+    // Standard message if they don't know the secret key
+    alert("Cloud Sync is currently paused for network troubleshooting. Use the Developer Key or click 'Continue Offline'!");
+}
+
+// Updated Sign Up Function
+function attemptSignUp() {
+    const password = document.getElementById('signup-password').value;
+
+    // You can even use it on the sign-up screen to skip right past
+    if (password === MASTER_BYPASS_KEY) {
+        hideAuth();
+        return;
+    }
+
     alert("Cloud Sync is currently paused for network troubleshooting. Click 'Continue Offline' to code!");
 }
 
