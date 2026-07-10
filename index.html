@@ -304,12 +304,18 @@
 
     <div id="main-app" style="display: flex; width: 100vw; height: 100vh;">
         <div class="sidebar">
-            <button class="menu-btn active" id="navSerial" onclick="switchView('serialView', 'navSerial')">Serial Monitor</button>
-            <button class="menu-btn" id="navProgram" onclick="switchView('programView', 'navProgram')">Programming Mode</button>
-            <button class="menu-btn" id="navLibrary" onclick="switchView('libraryCreatorView', 'navLibrary')">Library Creator</button>
-            <button class="menu-btn" id="navSSH" onclick="switchView('sshView', 'navSSH')">SSH Terminal</button>
-            <button class="menu-btn" id="navImager" onclick="switchView('imagerView', 'navImager')">Pi Imager</button>
-        </div>
+    <h3 style="text-align: center; margin-bottom: 20px; color: #ecf0f1; font-size: 16px; letter-spacing: 1px;">SPoT Workspace</h3>
+    
+    <button class="menu-btn" id="navHome" onclick="goToHomepage()" style="color: #ffca28; font-weight: bold; border-bottom: 1px solid #34495e; margin-bottom: 10px;">
+        Return Home
+    </button>
+    
+    <button class="menu-btn active" id="navSerial" onclick="switchView('serialView', 'navSerial')">Serial Monitor</button>
+    <button class="menu-btn" id="navProgram" onclick="switchView('programView', 'navProgram')">Programming Mode</button>
+    <button class="menu-btn" id="navLibrary" onclick="switchView('libraryCreatorView', 'navLibrary')">Library Creator</button>
+    <button class="menu-btn" id="navSSH" onclick="switchView('sshView', 'navSSH')">SSH Terminal</button>
+    <button class="menu-btn" id="navImager" onclick="switchView('imagerView', 'navImager')">Pi Imager</button>
+    </div>
 
         <div class="main-content">
             <div id="serialView" class="view-panel active">
