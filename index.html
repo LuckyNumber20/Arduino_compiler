@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Serial Port</title>
+    <title>Broken Cracker SPoT</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ext-language_tools.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.css" />
@@ -11,102 +11,66 @@
 
     <style>
         /* --- FULL SCREEN AUTH OVERLAY --- */
-#auth-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: #1e1e1e; /* Dark IDE background */
-    z-index: 9999; /* Keeps it on top of everything */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: sans-serif;
-}
-        <div id="homepage-view" style="display: none; width: 100vw; height: 100vh; background-color: #1e1e1e; font-family: sans-serif; color: white;">
-    
-    <div style="background-color: #252526; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333;">
-        <h2 style="margin: 0; font-size: 20px; color: #007acc;">Broken Cracker SPoT</h2>
-        <span style="font-size: 12px; color: #888;">Version 1.0.0 (Beta)</span>
-    </div>
+        #auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #1e1e1e; /* Dark IDE background */
+            z-index: 9999; /* Keeps it on top of everything */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: sans-serif;
+        }
 
-    <div style="display: flex; height: calc(100vh - 60px);">
-        
-        <div style="flex: 2; padding: 40px; border-right: 1px solid #333; overflow-y: auto;">
-            <h1 style="margin-top: 0; font-weight: 300;">Welcome to the Workspace</h1>
-            <p style="color: #aaa; margin-bottom: 40px;">Choose an option below to start coding.</p>
+        .auth-box {
+            background-color: #2d2d2d;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            width: 320px;
+            text-align: center;
+            color: white;
+        }
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
-                <div onclick="createNewSketch()" style="background: #2d2d2d; padding: 25px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid #444;" onmouseover="this.style.borderColor='#007acc'" onmouseout="this.style.borderColor='#444'">
-                    <h3 style="margin-top: 0; color: #007acc;">New File</h3>
-                    <p style="color: #aaa; font-size: 13px; margin: 0;">Start from scratch with a fresh blueprint.</p>
-                </div>
+        .auth-box input {
+            width: 90%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #1e1e1e;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 4px;
+        }
 
-                <div onclick="openLocalFolder()" style="background: #2d2d2d; padding: 25px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid #444;" onmouseover="this.style.borderColor='#007acc'" onmouseout="this.style.borderColor='#444'">
-                    <h3 style="margin-top: 0; color: #4ec9b0;">Open Local Folder</h3>
-                    <p style="color: #aaa; font-size: 13px; margin: 0;">Browse your hard drive for existing projects.</p>
-                </div>
-            </div>
-        </div>
+        .auth-box button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background: #007acc;
+            border: none;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
 
-        <div style="flex: 1; padding: 40px; background-color: #252526;">
-            <h3 style="margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px;">Recent Work</h3>
-            <ul style="list-style: none; padding: 0; color: #aaa; font-size: 14px;">
-                <li style="padding: 8px 0; border-bottom: 1px solid #2d2d2d; cursor: pointer;" onclick="alert('Feature coming soon!')">📝 blink_led.ino</li>
-                <li style="padding: 8px 0; border-bottom: 1px solid #2d2d2d; cursor: pointer;" onclick="alert('Feature coming soon!')">📝 servo_test.bkc</li>
-                <li style="padding: 8px 0; border-bottom: 1px solid #2d2d2d; cursor: pointer;" onclick="alert('Feature coming soon!')">📝 sensor_read.ino</li>
-            </ul>
-        </div>
+        .auth-box button.secondary {
+            background: transparent;
+            border: 1px solid #555;
+            margin-top: 10px;
+        }
 
-    </div>
-</div>
+        .auth-box button.skip {
+            background: transparent;
+            border: none;
+            color: #888;
+            font-size: 12px;
+            margin-top: 15px;
+        }
 
-.auth-box {
-    background-color: #2d2d2d;
-    padding: 40px;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    width: 320px;
-    text-align: center;
-    color: white;
-}
-
-.auth-box input {
-    width: 90%;
-    padding: 12px;
-    margin: 10px 0;
-    background: #1e1e1e;
-    border: 1px solid #444;
-    color: white;
-    border-radius: 4px;
-}
-
-.auth-box button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 15px;
-    background: #007acc;
-    border: none;
-    color: white;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.auth-box button.secondary {
-    background: transparent;
-    border: 1px solid #555;
-    margin-top: 10px;
-}
-
-.auth-box button.skip {
-    background: transparent;
-    border: none;
-    color: #888;
-    font-size: 12px;
-    margin-top: 15px;
-}
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -277,99 +241,130 @@
 <body>
 
     <div id="auth-overlay">
-    
-    <div id="login-view" class="auth-box">
-        <h2>Broken Cracker SPoT</h2>
-        <p style="color: #bbb; font-size: 14px; margin-bottom: 20px;">Welcome back.</p>
-        
-        <input type="text" id="login-username" placeholder="Username or Email">
-        <input type="password" id="login-password" placeholder="Password">
-        
-        <button onclick="attemptLogin()">Log In</button>
-        <button class="secondary" onclick="switchView('signup')">Create Account</button>
-        
-        <button class="skip" onclick="hideAuth()">Continue Offline</button>
+        <div id="login-view" class="auth-box">
+            <h2>Broken Cracker SPoT</h2>
+            <p style="color: #bbb; font-size: 14px; margin-bottom: 20px;">Welcome back.</p>
+            
+            <input type="text" id="login-username" placeholder="Username or Email">
+            <input type="password" id="login-password" placeholder="Password">
+            
+            <button onclick="attemptLogin()">Log In</button>
+            <button class="secondary" onclick="switchAuthView('signup')">Create Account</button>
+            
+            <button class="skip" onclick="hideAuth()">Continue Offline</button>
+        </div>
+
+        <div id="signup-view" class="auth-box" style="display: none;">
+            <h2>Create Account</h2>
+            <p style="color: #bbb; font-size: 14px; margin-bottom: 20px;">Join the cloud.</p>
+
+            <input type="text" id="signup-name" placeholder="Full Name">
+            <input type="text" id="signup-username" placeholder="Username">
+            <input type="password" id="signup-password" placeholder="Password">
+            
+            <button onclick="attemptSignUp()">Complete Sign Up</button>
+            <button class="secondary" onclick="switchAuthView('login')">Back to Login</button>
+        </div>
     </div>
 
-    <div id="signup-view" class="auth-box" style="display: none;">
-        <h2>Create Account</h2>
-        <p style="color: #bbb; font-size: 14px; margin-bottom: 20px;">Join the cloud.</p>
+    <div id="homepage-view" style="display: none; width: 100vw; height: 100vh; background-color: #1e1e1e; font-family: sans-serif; color: white; position: fixed; top: 0; left: 0; z-index: 9998;">
+        <div style="background-color: #252526; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333;">
+            <h2 style="margin: 0; font-size: 20px; color: #007acc;">🚀 Broken Cracker SPoT</h2>
+            <span style="font-size: 12px; color: #888;">Version 1.0.0 (Beta)</span>
+        </div>
 
-        <input type="text" id="signup-name" placeholder="Full Name">
-        <input type="text" id="signup-username" placeholder="Username">
-        <input type="password" id="signup-password" placeholder="Password">
-        
-        <button onclick="attemptSignUp()">Complete Sign Up</button>
-        <button class="secondary" onclick="switchView('login')">Back to Login</button>
+        <div style="display: flex; height: calc(100vh - 60px);">
+            <div style="flex: 2; padding: 40px; border-right: 1px solid #333; overflow-y: auto;">
+                <h1 style="margin-top: 0; font-weight: 300;">Welcome to the Workspace</h1>
+                <p style="color: #aaa; margin-bottom: 40px;">Choose an option below to start coding.</p>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                    <div onclick="createNewSketch()" style="background: #2d2d2d; padding: 25px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid #444;" onmouseover="this.style.borderColor='#007acc'" onmouseout="this.style.borderColor='#444'">
+                        <h3 style="margin-top: 0; color: #007acc;">📄 New File</h3>
+                        <p style="color: #aaa; font-size: 13px; margin: 0;">Start from scratch with a fresh blueprint.</p>
+                    </div>
+
+                    <div onclick="openLocalFolder()" style="background: #2d2d2d; padding: 25px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid #444;" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='#444'">
+                        <h3 style="margin-top: 0; color: #4ec9b0;">📂 Open Local Folder</h3>
+                        <p style="color: #aaa; font-size: 13px; margin: 0;">Browse your hard drive for existing projects.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="flex: 1; padding: 40px; background-color: #252526;">
+                <h3 style="margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px;">Recent Work</h3>
+                <ul style="list-style: none; padding: 0; color: #aaa; font-size: 14px;">
+                    <li style="padding: 8px 0; border-bottom: 1px solid #2d2d2d; cursor: pointer;" onclick="alert('Feature coming soon!')">📝 blink_led.ino</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #2d2d2d; cursor: pointer;" onclick="alert('Feature coming soon!')">📝 servo_test.bkc</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #2d2d2d; cursor: pointer;" onclick="alert('Feature coming soon!')">📝 sensor_read.ino</li>
+                </ul>
+            </div>
+        </div>
     </div>
 
-</div>
-
-<div class="sidebar">
-    <button class="menu-btn active" id="navSerial" onclick="switchView('serialView', 'navSerial')">Serial Monitor</button>
-    <button class="menu-btn" id="navProgram" onclick="switchView('programView', 'navProgram')">Programming Mode</button>
-    <button class="menu-btn" id="navLibrary" onclick="switchView('libraryCreatorView', 'navLibrary')">Library Creator</button>
-    <button class="menu-btn" id="navSSH" onclick="switchView('sshView', 'navSSH')">SSH Terminal</button>
-    <button class="menu-btn" id="navImager" onclick="switchView('imagerView', 'navImager')">Pi Imager</button>
-</div>
-
-<div class="main-content">
-
-    <div id="serialView" class="view-panel active">
-        <h2>USB Serial Port</h2>
-
-        <div>
-            <label for="baudrate">Baud Rate: </label>
-            <select id="baudrate" style="width: auto;">
-                <option value="9600">9600</option>
-                <option value="115200" selected>115200</option>
-            </select>
-            <button id="connectBtn">Connect to USB</button>
-            <button id="disconnectBtn" style="display: none;">Disconnect</button>
+    <div id="main-app" style="display: flex; width: 100vw; height: 100vh;">
+        <div class="sidebar">
+            <button class="menu-btn active" id="navSerial" onclick="switchView('serialView', 'navSerial')">Serial Monitor</button>
+            <button class="menu-btn" id="navProgram" onclick="switchView('programView', 'navProgram')">Programming Mode</button>
+            <button class="menu-btn" id="navLibrary" onclick="switchView('libraryCreatorView', 'navLibrary')">Library Creator</button>
+            <button class="menu-btn" id="navSSH" onclick="switchView('sshView', 'navSSH')">SSH Terminal</button>
+            <button class="menu-btn" id="navImager" onclick="switchView('imagerView', 'navImager')">Pi Imager</button>
         </div>
 
-        <div style="margin-top: 20px;">
-            <input type="text" id="commandInput" placeholder="Type command here..." disabled>
-            <button id="sendBtn" disabled>Send</button>
-        </div>
+        <div class="main-content">
+            <div id="serialView" class="view-panel active">
+                <h2>USB Serial Port</h2>
+                <div>
+                    <label for="baudrate">Baud Rate: </label>
+                    <select id="baudrate" style="width: auto;">
+                        <option value="9600">9600</option>
+                        <option value="115200" selected>115200</option>
+                    </select>
+                    <button id="connectBtn">Connect to USB</button>
+                    <button id="disconnectBtn" style="display: none;">Disconnect</button>
+                </div>
 
-        <div class="status">Status: <span id="statusText" style="color: red;">Disconnected</span></div>
-        <div class="log" id="logText"></div>
+                <div style="margin-top: 20px;">
+                    <input type="text" id="commandInput" placeholder="Type command here..." disabled>
+                    <button id="sendBtn" disabled>Send</button>
+                </div>
 
-        <div class="monitor-header">
-            <h3 class="monitor-title">Serial Monitor</h3>
-            <button id="clearBtn">Clear Output</button>
-        </div>
-        <div class="terminal" id="serialTerminal">Waiting for data connection...</div>
-    </div>
+                <div class="status">Status: <span id="statusText" style="color: red;">Disconnected</span></div>
+                <div class="log" id="logText"></div>
 
-    <div id="programView" class="view-panel">
-        <h2>Broken Cracker SPoT</h2>
+                <div class="monitor-header">
+                    <h3 class="monitor-title">Serial Monitor</h3>
+                    <button id="clearBtn">Clear Output</button>
+                </div>
+                <div class="terminal" id="serialTerminal">Waiting for data connection...</div>
+            </div>
 
-        <div class="toolbar" style="background: #e9ecef; padding: 10px; border-radius: 4px;">
-            <input type="text" id="sketchNameInput" placeholder="sketch_name" style="width: 180px;">
-            <button id="saveSketchBtn" style="background-color: #17a2b8;">Save Sketch</button>
-            <button id="loadSketchBtn" style="background-color: #6c757d;">Load Sketch</button>
-        </div>
+            <div id="programView" class="view-panel">
+                <h2>Broken Cracker SPoT</h2>
+                <div class="toolbar" style="background: #e9ecef; padding: 10px; border-radius: 4px;">
+                    <input type="text" id="sketchNameInput" placeholder="sketch_name" style="width: 180px;">
+                    <button id="saveSketchBtn" style="background-color: #17a2b8;">Save Sketch</button>
+                    <button id="loadSketchBtn" style="background-color: #6c757d;">Load Sketch</button>
+                </div>
 
-        <div class="toolbar">
-            <label for="boardSelect">Board:</label>
-            <select id="boardSelect">
-                <option value="arduino:avr:uno">Arduino Uno</option>
-                <option value="esp32:esp32:esp32da">ESP32</option>
-            </select>
+                <div class="toolbar">
+                    <label for="boardSelect">Board:</label>
+                    <select id="boardSelect">
+                        <option value="arduino:avr:uno">Arduino Uno</option>
+                        <option value="esp32:esp32:esp32da">ESP32</option>
+                    </select>
 
-            <label for="portSelect" style="margin-left: 10px;">COM Port:</label>
-            <select id="portSelect">
-                <option value="">Scanning ports...</option>
-            </select>
-            <button id="refreshPortsBtn" type="button" style="background-color: #555;">Refresh</button>
+                    <label for="portSelect" style="margin-left: 10px;">COM Port:</label>
+                    <select id="portSelect">
+                        <option value="">Scanning ports...</option>
+                    </select>
+                    <button id="refreshPortsBtn" type="button" style="background-color: #555;">Refresh</button>
 
-            <button id="compileBtn" style="margin-left: 10px;">Compile</button>
-            <button id="uploadBtn" style="background-color: #28a745;" disabled>Upload</button>
-        </div>
+                    <button id="compileBtn" style="margin-left: 10px;">Compile</button>
+                    <button id="uploadBtn" style="background-color: #28a745;" disabled>Upload</button>
+                </div>
 
-        <div id="editor">void setup() {
+                <div id="editor">void setup() {
   Serial.begin(115200);
   pinMode(LED_BUILTIN, OUTPUT);
 }
@@ -383,57 +378,57 @@ void loop() {
   delay(1000);
 }</div>
 
-        <div id="progressContainer" style="display: none; width: 100%; background-color: #e0e0e0; border-radius: 4px; margin-bottom: 10px; overflow: hidden; height: 10px;">
-            <div id="progressBar" style="width: 0%; height: 100%; background-color: #28a745; transition: width 0.4s ease;"></div>
+                <div id="progressContainer" style="display: none; width: 100%; background-color: #e0e0e0; border-radius: 4px; margin-bottom: 10px; overflow: hidden; height: 10px;">
+                    <div id="progressBar" style="width: 0%; height: 100%; background-color: #28a745; transition: width 0.4s ease;"></div>
+                </div>
+                <div class="log-window" id="ideLog">Ready to compile...</div>
+            </div>
+
+            <div id="libraryCreatorView" class="view-panel">
+                <h2>Library Creator Mode</h2>
+                <p style="color: #666; font-size: 14px;">Enter a custom library name to automatically generate standard <code>.h</code> and <code>.cpp</code> object templates inside your compiler workspace files tree mapping.</p>
+                
+                <div class="toolbar" style="margin-top: 20px;">
+                    <input type="text" id="libNameInput" placeholder="MyCustomLibrary" style="width: 250px;">
+                    <button id="generateLibBtn" style="background-color: #6f42c1;"> Generate Library Templates</button>
+                </div>
+                <div class="log-window" id="libLog" style="height: 80px; margin-top: 15px;">Waiting for build request...</div>
+            </div>
+
+            <div id="sshView" class="view-panel">
+                <h2>Remote SSH Connection</h2>
+                <div class="toolbar">
+                    <input type="text" id="sshHost" placeholder="IP Address (e.g., 192.168.1.50)" style="width: 150px;">
+                    <input type="text" id="sshUser" placeholder="Username" style="width: 100px;">
+                    <input type="password" id="sshPass" placeholder="Password" style="width: 100px;">
+                    <button id="sshConnectBtn" style="background-color: #28a745;">Connect</button>
+                    <button id="sshDisconnectBtn" style="background-color: #dc3545; display: none;">Disconnect</button>
+                </div>
+                <div id="sshTerminal" style="height: 300px; background: #000; padding: 10px; border-radius: 4px; margin-top: 15px;"></div>
+            </div>
+
+            <div id="imagerView" class="view-panel">
+                <h2>Raspberry Pi Imager</h2>
+                <p style="color: #dc3545; font-size: 13px;"><b>Warning:</b> Writing raw images will erase all data on the target drive.</p>
+                
+                <div class="toolbar" style="margin-top: 15px;">
+                    <input type="text" id="imagePath" placeholder="Path to .img or .iso file" style="width: 250px;">
+                    
+                    <select id="driveSelect" style="width: 200px; margin-left: 10px;">
+                        <option value="">Scanning for SD/USB drives...</option>
+                    </select>
+                    <button id="refreshDrivesBtn" style="background-color: #555;"> Refresh</button>
+                </div>
+                
+                <button id="flashDriveBtn" style="background-color: #dc3545; width: 100%; margin-top: 15px; font-weight: bold;"> Flash to Drive</button>
+                
+                <div class="log-window" id="imagerLog" style="height: 100px; margin-top: 15px;">Awaiting file and target drive...</div>
+            </div>
         </div>
-        <div class="log-window" id="ideLog">Ready to compile...</div>
     </div>
-
-    <div id="libraryCreatorView" class="view-panel">
-        <h2>Library Creator Mode</h2>
-        <p style="color: #666; font-size: 14px;">Enter a custom library name to automatically generate standard <code>.h</code> and <code>.cpp</code> object templates inside your compiler workspace files tree mapping.</p>
-        
-        <div class="toolbar" style="margin-top: 20px;">
-            <input type="text" id="libNameInput" placeholder="MyCustomLibrary" style="width: 250px;">
-            <button id="generateLibBtn" style="background-color: #6f42c1;"> Generate Library Templates</button>
-        </div>
-        <div class="log-window" id="libLog" style="height: 80px; margin-top: 15px;">Waiting for build request...</div>
-    </div>
-
-
-    <div id="sshView" class="view-panel">
-    <h2>Remote SSH Connection</h2>
-    <div class="toolbar">
-        <input type="text" id="sshHost" placeholder="IP Address (e.g., 192.168.1.50)" style="width: 150px;">
-        <input type="text" id="sshUser" placeholder="Username" style="width: 100px;">
-        <input type="password" id="sshPass" placeholder="Password" style="width: 100px;">
-        <button id="sshConnectBtn" style="background-color: #28a745;">Connect</button>
-        <button id="sshDisconnectBtn" style="background-color: #dc3545; display: none;">Disconnect</button>
-    </div>
-    <div id="sshTerminal" style="height: 300px; background: #000; padding: 10px; border-radius: 4px; margin-top: 15px;"></div>
-</div>
-
-<div id="imagerView" class="view-panel">
-    <h2>Raspberry Pi Imager</h2>
-    <p style="color: #dc3545; font-size: 13px;"><b>Warning:</b> Writing raw images will erase all data on the target drive.</p>
-    
-    <div class="toolbar" style="margin-top: 15px;">
-        <input type="text" id="imagePath" placeholder="Path to .img or .iso file" style="width: 250px;">
-        
-        <select id="driveSelect" style="width: 200px; margin-left: 10px;">
-            <option value="">Scanning for SD/USB drives...</option>
-        </select>
-        <button id="refreshDrivesBtn" style="background-color: #555;"> Refresh</button>
-    </div>
-    
-    <button id="flashDriveBtn" style="background-color: #dc3545; width: 100%; margin-top: 15px; font-weight: bold;"> Flash to Drive</button>
-    
-    <div class="log-window" id="imagerLog" style="height: 100px; margin-top: 15px;">Awaiting file and target drive...</div>
-</div>
-</div>
 
 <script>
-    // --- Navigation Logic ---
+    // --- Navigation Logic for Sidebar Mode Panels ---
     function switchView(viewId, btnId) {
         document.querySelectorAll('.view-panel').forEach(view => view.classList.remove('active'));
         document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
@@ -586,14 +581,11 @@ void loop() {
     }
 
     // --- Programming Mode Logic ---
-
-    // Initialize Ace Editor
     const editor = ace.edit("editor");
     editor.setTheme("ace/theme/monokai");
     editor.session.setMode("ace/mode/c_cpp");
     editor.setFontSize(14);
 
-    // Activating Code Autocomplete parameters options natively
     editor.setOptions({
         enableBasicAutocompletion: true,
         enableLiveAutocompletion: true,
@@ -605,7 +597,6 @@ void loop() {
     const uploadBtn = document.getElementById('uploadBtn');
     const portSelect = document.getElementById('portSelect');
 
-    // Automatically scan and populate active hardware COM ports via Electron
     async function fetchPorts() {
         try {
             const response = await fetch('http://localhost:10000/ports');
@@ -636,7 +627,6 @@ void loop() {
     document.getElementById('refreshPortsBtn').addEventListener('click', fetchPorts);
     window.addEventListener('DOMContentLoaded', fetchPorts);
 
-    // --- LOCAL WORKSPACE ROUTING ---
     compileBtn.addEventListener('click', async () => {
         const code = editor.getValue();
         const board = document.getElementById('boardSelect').value;
@@ -724,7 +714,6 @@ void loop() {
         }
     });
 
-    // --- SKETCH FILE MANAGEMENT INTERFACE HOOKS ---
     document.getElementById('saveSketchBtn').addEventListener('click', async () => {
         const name = document.getElementById('sketchNameInput').value.trim();
         const code = editor.getValue();
@@ -769,7 +758,6 @@ void loop() {
         }
     });
 
-    // --- NATIVE LIBRARY CREATOR LOGIC TRACE ---
     document.getElementById('generateLibBtn').addEventListener('click', async () => {
         const libName = document.getElementById('libNameInput').value.trim();
         const outputWindow = document.getElementById('libLog');
@@ -798,110 +786,109 @@ void loop() {
             outputWindow.innerText = "Connection lost communicating directory file layout setups.";
         }
     });
+
     // --- SSH TERMINAL LOGIC ---
-const sshConnectBtn = document.getElementById('sshConnectBtn');
-const sshDisconnectBtn = document.getElementById('sshDisconnectBtn');
-let term = new Terminal();
-term.open(document.getElementById('sshTerminal'));
-term.write('Ready to connect via SSH...\r\n');
+    const sshConnectBtn = document.getElementById('sshConnectBtn');
+    const sshDisconnectBtn = document.getElementById('sshDisconnectBtn');
+    let term = new Terminal();
+    term.open(document.getElementById('sshTerminal'));
+    term.write('Ready to connect via SSH...\r\n');
 
-let sshSocket;
+    let sshSocket;
 
-sshConnectBtn.addEventListener('click', () => {
-    const host = document.getElementById('sshHost').value;
-    const user = document.getElementById('sshUser').value;
-    const pass = document.getElementById('sshPass').value;
+    sshConnectBtn.addEventListener('click', () => {
+        const host = document.getElementById('sshHost').value;
+        const user = document.getElementById('sshUser').value;
+        const pass = document.getElementById('sshPass').value;
 
-    if (!host || !user) return alert("Host and Username required!");
+        if (!host || !user) return alert("Host and Username required!");
 
-    term.reset();
-    term.write('Connecting...\r\n');
-    
-    sshSocket = new WebSocket('ws://localhost:10000');
-    
-    sshSocket.onopen = () => {
-        sshSocket.send(JSON.stringify({ action: 'connect', host, user, pass }));
-        sshConnectBtn.style.display = 'none';
-        sshDisconnectBtn.style.display = 'inline-block';
-    };
+        term.reset();
+        term.write('Connecting...\r\n');
+        
+        sshSocket = new WebSocket('ws://localhost:10000');
+        
+        sshSocket.onopen = () => {
+            sshSocket.send(JSON.stringify({ action: 'connect', host, user, pass }));
+            sshConnectBtn.style.display = 'none';
+            sshDisconnectBtn.style.display = 'inline-block';
+        };
 
-    sshSocket.onmessage = (event) => {
-        term.write(event.data);
-    };
+        sshSocket.onmessage = (event) => {
+            term.write(event.data);
+        };
 
-    term.onData(data => {
-        if (sshSocket.readyState === WebSocket.OPEN) {
-            sshSocket.send(JSON.stringify({ action: 'input', data: data }));
-        }
+        term.onData(data => {
+            if (sshSocket.readyState === WebSocket.OPEN) {
+                sshSocket.send(JSON.stringify({ action: 'input', data: data }));
+            }
+        });
+
+        sshSocket.onclose = () => {
+            term.write('\r\nConnection closed.\r\n');
+            sshConnectBtn.style.display = 'inline-block';
+            sshDisconnectBtn.style.display = 'none';
+        };
     });
 
-    sshSocket.onclose = () => {
-        term.write('\r\nConnection closed.\r\n');
-        sshConnectBtn.style.display = 'inline-block';
-        sshDisconnectBtn.style.display = 'none';
-    };
-});
+    sshDisconnectBtn.addEventListener('click', () => {
+        if (sshSocket) sshSocket.close();
+    });
 
-sshDisconnectBtn.addEventListener('click', () => {
-    if (sshSocket) sshSocket.close();
-});
+    // --- PI IMAGER LOGIC ---
+    const driveSelect = document.getElementById('driveSelect');
+    const imagerLog = document.getElementById('imagerLog');
 
-// --- PI IMAGER LOGIC ---
-const driveSelect = document.getElementById('driveSelect');
-const imagerLog = document.getElementById('imagerLog');
-
-async function fetchDrives() {
-    try {
-        const res = await fetch('http://localhost:10000/drives');
-        const drives = await res.json();
-        
-        driveSelect.innerHTML = '';
-        if (drives.length === 0) {
-            driveSelect.innerHTML = '<option value="">No removable drives found</option>';
-            return;
+    async function fetchDrives() {
+        try {
+            const res = await fetch('http://localhost:10000/drives');
+            const drives = await res.json();
+            
+            driveSelect.innerHTML = '';
+            if (drives.length === 0) {
+                driveSelect.innerHTML = '<option value="">No removable drives found</option>';
+                return;
+            }
+            
+            drives.forEach(drive => {
+                const opt = document.createElement('option');
+                opt.value = drive.device;
+                opt.innerText = `${drive.description} (${Math.round(drive.size / 1e9)} GB) - ${drive.device}`;
+                driveSelect.appendChild(opt);
+            });
+        } catch (err) {
+            driveSelect.innerHTML = '<option value="">Error scanning drives</option>';
         }
+    }
+
+    document.getElementById('refreshDrivesBtn').addEventListener('click', fetchDrives);
+    window.addEventListener('DOMContentLoaded', fetchDrives);
+
+    document.getElementById('flashDriveBtn').addEventListener('click', async () => {
+        const imagePath = document.getElementById('imagePath').value;
+        const device = driveSelect.value;
         
-        drives.forEach(drive => {
-            const opt = document.createElement('option');
-            // Safely show size and description
-            opt.value = drive.device;
-            opt.innerText = `${drive.description} (${Math.round(drive.size / 1e9)} GB) - ${drive.device}`;
-            driveSelect.appendChild(opt);
-        });
-    } catch (err) {
-        driveSelect.innerHTML = '<option value="">Error scanning drives</option>';
-    }
-}
+        if (!imagePath || !device) return alert("Select an image and a target drive.");
+        if (!confirm(`DANGER: Are you absolutely sure you want to overwrite ${device}? All data will be lost!`)) return;
 
-document.getElementById('refreshDrivesBtn').addEventListener('click', fetchDrives);
-window.addEventListener('DOMContentLoaded', fetchDrives); // Load on boot
-
-document.getElementById('flashDriveBtn').addEventListener('click', async () => {
-    const imagePath = document.getElementById('imagePath').value;
-    const device = driveSelect.value;
-    
-    if (!imagePath || !device) return alert("Select an image and a target drive.");
-    if (!confirm(`DANGER: Are you absolutely sure you want to overwrite ${device}? All data will be lost!`)) return;
-
-    imagerLog.innerText = `Starting flash sequence for ${device}...\nThis may take a while depending on image size. DO NOT unplug the drive.`;
-    
-    try {
-        const res = await fetch('http://localhost:10000/flash-image', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imagePath, device })
-        });
-        const data = await res.json();
-        imagerLog.innerText += `\n\nResult: ${data.message || data.error}\n${data.details || ''}`;
-    } catch (err) {
-        imagerLog.innerText += `\nError contacting flasher backend: ${err.message}`;
-    }
-});
+        imagerLog.innerText = `Starting flash sequence for ${device}...\nThis may take a while depending on image size. DO NOT unplug the drive.`;
+        
+        try {
+            const res = await fetch('http://localhost:10000/flash-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imagePath, device })
+            });
+            const data = await res.json();
+            imagerLog.innerText += `\n\nResult: ${data.message || data.error}\n${data.details || ''}`;
+        } catch (err) {
+            imagerLog.innerText += `\nError contacting flasher backend: ${err.message}`;
+        }
+    });
 </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
 <script>
-    // 1. Initialize the Cloud Connection using your specific keys
     const { Client, Account, ID } = Appwrite;
     const client = new Client()
         .setEndpoint('https://sfo.cloud.appwrite.io/v1') 
@@ -909,110 +896,68 @@ document.getElementById('flashDriveBtn').addEventListener('click', async () => {
 
     const account = new Account(client);
 
-    // 2. Function to Register a New User
-    async function createAccount() {
-        const email = document.getElementById('cloud-email').value;
-        const password = document.getElementById('cloud-password').value;
+    // --- DEVELOPER MASTER KEY CONFIG ---
+    const MASTER_BYPASS_KEY = "mj23"; 
+
+    // Flips between login view and signup view in the auth manager box safely
+    function switchAuthView(view) {
+        if (view === 'signup') {
+            document.getElementById('login-view').style.display = 'none';
+            document.getElementById('signup-view').style.display = 'block';
+        } else {
+            document.getElementById('signup-view').style.display = 'none';
+            document.getElementById('login-view').style.display = 'block';
+        }
+    }
+
+    // Handles the bypass route or entry to clear the layout overlay and bring up SPoT homepage dashboard
+    function hideAuth() {
+        document.getElementById('auth-overlay').style.display = 'none';
+        document.getElementById('homepage-view').style.display = 'block';
+        document.getElementById('main-app').style.display = 'none'; // Keep core IDE hidden until homepage prompt action
+    }
+
+    // Triggered by clicking "New File" card from SPoT homepage dashboard
+    function createNewSketch() {
+        document.getElementById('homepage-view').style.display = 'none';
+        document.getElementById('main-app').style.display = 'flex'; // Triggers flex view layout setup cleanly
+    }
+
+    function openLocalFolder() {
+        alert("Triggering local project directory search index hook...");
+    }
+
+    function attemptLogin() {
+        const username = document.getElementById('login-username').value;
+        const password = document.getElementById('login-password').value;
         
+        if (username === MASTER_BYPASS_KEY || password === MASTER_BYPASS_KEY) {
+            hideAuth();
+            return;
+        }
+        alert("Cloud Sync is currently paused for network troubleshooting. Use the Developer Key or click 'Continue Offline'!");
+    }
+
+    function attemptSignUp() {
+        const password = document.getElementById('signup-password').value;
+
+        if (password === MASTER_BYPASS_KEY) {
+            hideAuth();
+            return;
+        }
+        alert("Cloud Sync is currently paused for network troubleshooting. Click 'Continue Offline' to code!");
+    }
+
+    async function createAccount() {
+        const email = document.getElementById('cloud-email')?.value;
+        const password = document.getElementById('cloud-password')?.value;
         try {
-            // Appwrite requires a unique ID for every user, so we use ID.unique()
             await account.create(ID.unique(), email, password);
             alert("Account successfully created! You can now log in.");
         } catch (err) {
             alert("Registration Error: " + err.message);
         }
     }
-
-    // 3. Function to Log In
-    async function loginToCloud() {
-        const email = document.getElementById('cloud-email').value;
-        const password = document.getElementById('cloud-password').value;
-        
-        try {
-            // This creates a secure "session" token so they stay logged in
-            await account.createEmailPasswordSession(email, password);
-            alert("Logged in! Cloud Sync is now active.");
-            
-            // Hide the login box so it gets out of the user's way
-            document.getElementById('cloud-login-box').style.display = 'none';
-        } catch (err) {
-            alert("Login Error: " + err.message);
-        }
-    }
-
-    // --- AUTHENTICATION UI LOGIC ---
-
-// Flips between the Login and Sign Up screens
-function switchView(view) {
-    if (view === 'signup') {
-        document.getElementById('login-view').style.display = 'none';
-        document.getElementById('signup-view').style.display = 'block';
-    } else {
-        document.getElementById('signup-view').style.display = 'none';
-        document.getElementById('login-view').style.display = 'block';
-    }
-}
-
-// Hides the whole overlay so you can see your IDE
-function hideAuth() {
-    // Hide the login cover
-    document.getElementById('auth-overlay').style.display = 'none';
-    // Show the brand new homepage dashboard!
-    document.getElementById('homepage-view').style.display = 'block';
-}
-    // Function called when the user clicks "New File" on the homepage
-function createNewSketch() {
-    // 1. Hide the homepage view
-    document.getElementById('homepage-view').style.display = 'none';
-    
-    // 2. Open up your main editor layout (Make sure this matches the ID of your code editor container!)
-    // Assuming your main editor panel has an ID like 'editor-container' or 'main-app'
-    const mainWorkspace = document.getElementById('editor-container') || document.getElementById('main-app');
-    if (mainWorkspace) {
-        mainWorkspace.style.display = 'block';
-    }
-}
-
-// Function called when browsing local files
-function openLocalFolder() {
-    alert("Triggering file browser...");
-    // If you have a backend file selector endpoint, you would call it here!
-}
-// Temporary placeholder functions until we fix the network block
-// --- DEVELOPER BYPASS CONFIG ---
-const MASTER_BYPASS_KEY = "mj23"; 
-
-// Updated Login Function with Backdoor
-function attemptLogin() {
-    const username = document.getElementById('login-username').value;
-    const password = document.getElementById('login-password').value;
-    
-    // Check if the user typed the master key in either box
-    if (username === MASTER_BYPASS_KEY || password === MASTER_BYPASS_KEY) {
-        hideAuth(); // Instantly unlocks the IDE
-        return;
-    }
-    
-    // Standard message if they don't know the secret key
-    alert("Cloud Sync is currently paused for network troubleshooting. Use the Developer Key or click 'Continue Offline'!");
-}
-
-// Updated Sign Up Function
-function attemptSignUp() {
-    const password = document.getElementById('signup-password').value;
-
-    // You can even use it on the sign-up screen to skip right past
-    if (password === MASTER_BYPASS_KEY) {
-        hideAuth();
-        return;
-    }
-
-    alert("Cloud Sync is currently paused for network troubleshooting. Click 'Continue Offline' to code!");
-}
-
-function attemptSignUp() {
-    alert("Cloud Sync is currently paused for network troubleshooting. Click 'Continue Offline' to code!");
-}
 </script>
 
 </body>
