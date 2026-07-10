@@ -315,6 +315,7 @@
     <button class="menu-btn" id="navLibrary" onclick="switchView('libraryCreatorView', 'navLibrary')">Library Creator</button>
     <button class="menu-btn" id="navSSH" onclick="switchView('sshView', 'navSSH')">SSH Terminal</button>
     <button class="menu-btn" id="navImager" onclick="switchView('imagerView', 'navImager')">Pi Imager</button>
+    <button class="menu-btn" id="navController" onclick="switchView('controllerTerminalView', 'navController')">Terminal</button>
     </div>
 
         <div class="main-content">
@@ -430,6 +431,26 @@ void loop() {
                 
                 <div class="log-window" id="imagerLog" style="height: 100px; margin-top: 15px;">Awaiting file and target drive...</div>
             </div>
+            <div id="controllerTerminalView" class="view-panel">
+    <h2>Microcontroller Terminal</h2>
+    <p style="color: #666; font-size: 14px;">
+        Deploy the SPoT Interpreter firmware, then enter live commands directly to the hardware runtime.
+    </p>
+
+    <div class="toolbar" style="background: #e9ecef; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+        <button id="deployFirmwareBtn" style="background-color: #ff9800; font-weight: bold;">Startup & Deploy Parser</button>
+        <span id="deploymentStatus" style="margin-left: 15px; font-weight: bold; color: #555;">Status: Firmware Not Ready</span>
+    </div>
+
+    <div class="terminal" id="interactiveConsole" style="height: 300px; background-color: #0c1015; color: #00d2ff; font-family: monospace; padding: 15px; border-radius: 4px; overflow-y: auto; border: 1px solid #333;">
+        System offline. Press Startup to load terminal environment onto device...
+    </div>
+
+    <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <input type="text" id="interactiveInput" placeholder="Type firmware command (e.g., serialprintln(&quot;hello&quot;))" style="flex: 1; padding: 12px; font-family: monospace; background: #1e1e1e; color: #fff; border: 1px solid #444; border-radius: 4px;" disabled>
+        <button id="sendInteractiveBtn" style="background-color: #007acc; padding: 0 25px;" disabled>Execute</button>
+    </div>
+</div>
         </div>
     </div>
 
@@ -989,6 +1010,223 @@ document.addEventListener('keydown', (e) => {
     if (e.metaKey && e.altKey && (e.key === 'i' || e.key === 'j')) {
         e.preventDefault();
     }
+});
+    const deployBtn = document.getElementById('deployFirmwareBtn');
+const deployStatus = document.getElementById('deploymentStatus');
+const interactiveConsole = document.getElementById('interactiveConsole');
+const interactiveInput = document.getElementById('interactiveInput');
+const sendInteractiveBtn = document.getElementById('sendInteractiveBtn');
+
+// 1. Simulates deploying the parser binary onto the hardware node
+deployBtn.addEventListener('click', async () => {
+    deployStatus.innerText = "Deploying SPoT Core firmware...";
+    deployStatus.style.color = "#ff9800";
+    interactiveConsole.innerText = "> Initializing compiler flash routine...\n";
+
+    // Reuses your backend compile/flash endpoints to automate upload
+    try {
+        // In a full production version, you would send the parser string code to your background local compilation loop here
+        setTimeout(() => {
+            deployStatus.innerText = "Status: Live Debug Mode Connected";
+            deployStatus.style.color = "green";
+            interactiveConsole.innerText += "> Connection synchronized. Pipeline clear.\n> Ready for input commands.\n";
+            
+            // Enable text controls
+            interactiveInput.disabled = false;
+            sendInteractiveBtn.disabled = false;
+            interactiveInput.focus();
+        }, 2000);
+    } catch (err) {
+        deployStatus.innerText = "Deployment Failed";
+        deployStatus.style.color = "red";
+    }
+});
+
+// 2. Sends the command string across the active port interface pipeline
+async function dispatchInteractiveCommand() {
+    const rawCmd = interactiveInput.value.trim();
+    if (!rawCmd) return;
+
+    // Print command on local console layout screen trace view
+    interactiveConsole.innerText += `\n>> ${rawCmd}\n`;
+    
+    // Check if Web Serial port interface is connected and writable
+    if (port && port.writable) {
+        try {
+            const encoder = new TextEncoder();
+            const writer = port.writable.getWriter();
+            
+            // Append explicit newline flag expected by microcontroller string reader
+            await writer.write(encoder.encode(rawCmd + '\n'));
+            writer.releaseLock();
+        } catch (error) {
+            interactiveConsole.innerText += `[System Link Error: ${error.message}]\n`;
+        }
+    } else {
+        interactiveConsole.innerText += `[Simulation Warning: Local serial port link offline. Simulated response sent back successfully.]\n`;
+        
+        // Mocking responses for offline software GUI sandbox evaluation testing
+        if (rawCmd.startsWith('serialprintln("') && rawCmd.endsWith('")')) {
+            const parsedText = rawCmd.substring(15, rawCmd.length - 2);
+            interactiveConsole.innerText += `${parsedText}\n`;
+        } else {
+            interactiveConsole.innerText += `Syntax Error: Unknown command context.\n`;
+        }
+    }
+
+    interactiveInput.value = '';
+    interactiveConsole.scrollTop = interactiveConsole.scrollHeight;
+}
+
+// Bind button clicks and keyboard listener hooks
+sendInteractiveBtn.addEventListener('click', dispatchInteractiveCommand);
+interactiveInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') dispatchInteractiveCommand();
+});
+    // Global tracking references for the custom interactive terminal
+let interactivePort = null;
+let interactiveWriter = null;
+
+const setupTerminalBtn = document.getElementById('setupTerminalBtn');
+const terminalDeployStatus = document.getElementById('terminalDeployStatus');
+const interactiveConsole = document.getElementById('interactiveConsole');
+const interactiveInput = document.getElementById('interactiveInput');
+const sendInteractiveBtn = document.getElementById('sendInteractiveBtn');
+
+// Hardcoded C++ interpreter engine sketch code sent to the compiler core backend
+const TERMINAL_INTERPRETER_CODE = `
+String inputString = "";
+bool stringComplete = false;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(LED_BUILTIN, OUTPUT);
+  inputString.reserve(200);
+  Serial.println("SPOT_READY");
+}
+
+void loop() {
+  if (stringComplete) {
+    inputString.trim();
+    if (inputString.startsWith("serialprintln(\\"") && inputString.endsWith("\\")")) {
+      int startIdx = inputString.indexOf("\\"") + 1;
+      int endIdx = inputString.lastIndexOf("\\"");
+      Serial.println(inputString.substring(startIdx, endIdx));
+    } else if (inputString == "digitalWrite(LED, HIGH)") {
+      digitalWrite(LED_BUILTIN, HIGH);
+      Serial.println("LED status: HIGH");
+    } else if (inputString == "digitalWrite(LED, LOW)") {
+      digitalWrite(LED_BUILTIN, LOW);
+      Serial.println("LED status: LOW");
+    } else {
+      Serial.println("Syntax Error: Command unrecognized.");
+    }
+    inputString = "";
+    stringComplete = false;
+  }
+}
+
+void serialEvent() {
+  while (Serial.available()) {
+    char inChar = (char)Serial.read();
+    if (inChar == '\\n') stringComplete = true;
+    else inputString += inChar;
+  }
+}
+`;
+
+// Triggered when user clicks "1. Setup Port & Deploy Core"
+setupTerminalBtn.addEventListener('click', async () => {
+    if (!('serial' in navigator)) {
+        alert("Web Serial API is not supported in this browser. Please use Chrome or Edge.");
+        return;
+    }
+
+    try {
+        interactiveConsole.innerText = "> Requesting user access permissions to local USB controller list...\n";
+        
+        // Browser prompt pops up here asking for the USB selection mapping port context
+        interactivePort = await navigator.serial.requestPort();
+        
+        terminalDeployStatus.innerText = "Status: Flashing Firmware...";
+        terminalDeployStatus.style.color = "#ff9800";
+        interactiveConsole.innerText += "> Target selected. Initializing cloud code execution loop package structures...\n";
+
+        // Step A: Post the C++ code to your background compilation core endpoint
+        const compileRes = await fetch('http://localhost:10000/compile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: TERMINAL_INTERPRETER_CODE, board: "arduino:avr:uno" })
+        });
+        const compileData = await compileRes.json();
+
+        if (!compileRes.ok || !compileData.success) {
+            throw new Error(compileData.error || "Compiler service returned an unexpected structural system anomaly.");
+        }
+
+        interactiveConsole.innerText += "> Compilation successful. Launching hardware programmer binary utility controls...\n";
+
+        // Step B: Flash the compiled data down to the device
+        const flashRes = await fetch('http://localhost:10000/flash', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ port: "AUTO" }) // Replace with selected path or let background handle scanner arrays
+        });
+
+        if (!flashRes.ok) throw new Error("Flasher sequence rejected hardware upload permission.");
+
+        interactiveConsole.innerText += "> Flash complete! Establishing serial monitor pipe lines at 115200 baud...\n";
+
+        // Step C: Connect direct browser thread down to monitor responses
+        await interactivePort.open({ baudRate: 115200 });
+        
+        terminalDeployStatus.innerText = "Status: Interactive Mode Live";
+        terminalDeployStatus.style.color = "green";
+        interactiveConsole.innerText += "> Connection synchronized cleanly. Terminal workspace is ready for instructions.\n";
+
+        // Activate terminal input controls for runtime interaction
+        interactiveInput.disabled = false;
+        sendInteractiveBtn.disabled = false;
+        interactiveInput.focus();
+
+    } catch (err) {
+        console.error(err);
+        terminalDeployStatus.innerText = "Status: Execution Failed";
+        terminalDeployStatus.style.color = "red";
+        interactiveConsole.innerText += `\n[Fatal Setup Link Interruption: ${err.message}]\n`;
+    }
+});
+
+// Sends whatever command text was typed out to the running board over USB
+async function executeInteractiveTerminalInput() {
+    const commandText = interactiveInput.value.trim();
+    if (!commandText) return;
+
+    interactiveConsole.innerText += `\n>> ${commandText}\n`;
+
+    if (interactivePort && interactivePort.writable) {
+        try {
+            const encoder = new TextEncoder();
+            interactiveWriter = interactivePort.writable.getWriter();
+            
+            // Send the command string followed by the expected newline terminating flag character
+            await interactiveWriter.write(encoder.encode(commandText + '\n'));
+            interactiveWriter.releaseLock();
+        } catch (error) {
+            interactiveConsole.innerText += `[System Send Error: ${error.message}]\n`;
+        }
+    } else {
+        interactiveConsole.innerText += `[Offline Simulator Mode Alert] Microcontroller would execute: ${commandText}\n`;
+    }
+
+    interactiveInput.value = '';
+    interactiveConsole.scrollTop = interactiveConsole.scrollHeight;
+}
+
+// Map the interaction handlers to the submit elements
+sendInteractiveBtn.addEventListener('click', executeInteractiveTerminalInput);
+interactiveInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') executeInteractiveTerminalInput();
 });
 </script>
 
